@@ -4,6 +4,7 @@ from datetime import datetime
 import logging
 import os
 
+import config
 from utils.data_loader import fetch_train_and_val, get_features, get_train_generator_and_val_set, create_tf_dataset
 from utils.train import train_model, find_threshold
 from utils.persistence import save_model_and_reports
@@ -26,7 +27,7 @@ def run_training_pipeline(args: argparse.Namespace):
     if args.get_new_data:
         fetch_train_and_val(args)
     else:
-        data_exists = os.path.exists('train_data') and os.path.exists('val_data')
+        data_exists = os.path.exists(config.TRAIN_PATH) and os.path.exists(config.VAL_PATH)
         if data_exists:
             logger.info("Using existing local parquet files for training and validation data.")
         else:

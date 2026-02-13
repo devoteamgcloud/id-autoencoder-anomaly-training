@@ -1,31 +1,18 @@
-# task.py
-import argparse
 import os
-import time
 import uuid
-import re
-from typing import List, Tuple, Any, Generator
-from datetime import datetime, timedelta
-import logger
+from typing import List, Tuple, Generator
+from datetime import timedelta
+import logging
+import gc
 
 from google.cloud import bigquery, storage
-from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras.backend import epsilon
-import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import pandas as pd
-
-
-import os
-import pandas as pd
-import numpy as np
-import gc
-from typing import List
 import tensorflow as tf
 
-logger = logger.getLogger(__name__)
+import config
+
+logger = logging.getLogger(__name__)
 
 # Util Functions
 def fetch_data(
@@ -143,8 +130,8 @@ def fetch_train_and_val(args):
 
         temp_dataset: str = args.temp_dataset
         bucket_name: str = args.gcs_path
-        local_dir_train: str = "./data_train"
-        local_dir_val:str = "./data_val"
+        local_dir_train: str = config.TRAIN_PATH
+        local_dir_val:str = config.VAL_PATH
         project_id: str = "finnet-data-platform"
         location: str = "asia-southeast2"
     
@@ -278,7 +265,7 @@ def get_train_generator_and_val_set(
     }
 
     def _generator():
-        filenames = os.listdir('./data_train')
+        filenames = os.listdir(config.TRAIN_PATH)
     
         for filename in filenames:
             # Clean garbage
@@ -286,7 +273,7 @@ def get_train_generator_and_val_set(
 
             # Preprocess data
             df = preprocess(
-                df=pd.read_parquet(f'data_train/{filename}'),
+                df=pd.read_parquet(f'{config.TRAIN_PATH}/{filename}'),
                 **kwargs
             )
             df = df.astype(np.float32)
@@ -296,7 +283,7 @@ def get_train_generator_and_val_set(
 
     # Val Dataset
     val_df = preprocess(
-        pd.read_parquet(f'data_val/'),
+        pd.read_parquet(f'{config.VAL_PATH}/'),
         **kwargs
     )
     return _generator, val_df

@@ -7,4 +7,5 @@ python3 task.py \
     --log-scale-columns amount m_amount_mean_30d m_amount_std_30d m_tx_count_24h c_amount_mean_30d c_amount_std_30d c_tx_count_24h m_tx_count_2h m_amount_sum_2h c_tx_count_2h c_amount_sum_2h m_tx_count_30m c_tx_count_30m amount_vs_m_mean amount_vs_c_mean cm_tx_count_7d \
     --mmc-encoding-columns sof_id \
     --time-column created_at \
+    --get-new-data False \
     --epochs 5;

@@ -1,26 +1,18 @@
-import argparse
-import os
-import time
-import uuid
-import re
-from typing import List, Tuple
-from datetime import datetime, timedelta
-import logging
 import argparse.Namespace
+from typing import List, Tuple
+from datetime import datetime
+import logging
 
-from google.cloud import bigquery, storage
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.backend import epsilon
-import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import pandas as pd
 
+import config
 
 logger = logging.getLogger(__name__)
-
 
 def create_autoencoder(
     input_dim: int,
@@ -70,7 +62,6 @@ def create_autoencoder(
     return autoencoder
 
 
-
 def train_model(
         args: argparse.Namespace, 
         features: List[str],
@@ -109,7 +100,7 @@ def train_model(
         verbose=1
     )
     model_checkpoint = keras.callbacks.ModelCheckpoint(
-        f"{model_name}",
+        f"{config.MODEL_PATH}/{model_name}",
         monitor='loss',
         save_best_only=True,
         verbose=1

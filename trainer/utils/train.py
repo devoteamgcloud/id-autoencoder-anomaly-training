@@ -1,4 +1,4 @@
-import argparse.Namespace
+import argparse
 from typing import List, Tuple
 from datetime import datetime
 import logging
@@ -137,13 +137,13 @@ def find_threshold(
     for batch in train:
         # Unpack the batch, the data is in the form of (df, df)
         x_batch = batch[0]
-        reconstruction = autoencoder.predict(x_batch)
+        reconstruction = autoencoder(x_batch, training=False)
         loss = np.sqrt(np.mean(np.square(x_batch - reconstruction), axis=1))
         all_errors_train.append(loss)
     all_errors_train = np.concatenate(all_errors_train, axis=0)
     # Compute val error
     if 'val_r2_score' in history.history:
-        all_errors_val = np.sqrt(np.mean(np.square(autoencoder.predict(val_df) - val_df), axis=1))
+        all_errors_val = np.sqrt(np.mean(np.square(autoencoder(val_df, training=False) - val_df), axis=1))
     else:
         all_errors_val = np.array([])
 

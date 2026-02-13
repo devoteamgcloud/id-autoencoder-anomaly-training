@@ -1,9 +1,9 @@
 # task.py
 import logging
-import argparse.Namespace
+import argparse
+from typing import Any
 
 from tensorflow import keras
-import keras.callbacks.History
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def generate_training_report(
     args: argparse.Namespace,
-    history: keras.callbacks.History
+    history: Any
 ) -> None:
     if history:
         fig, axes = plt.subplots(1, 2, figsize=(15, 5))

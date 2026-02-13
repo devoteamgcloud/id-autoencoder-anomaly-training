@@ -55,7 +55,7 @@ def run_training_pipeline(args: argparse.Namespace):
     # Step 4: Generate training report
     logger.info("Generating training and threshold reports...")
     generate_training_report(args, history)
-    threshold, all_errors_train, all_errors_val = find_threshold(autoencoder, train, val_df, history, args)
+    threshold, all_errors_train, all_errors_val = find_threshold(args, autoencoder, train, val_df, history)
     generate_threshold_report(args, threshold, all_errors_train, all_errors_val)
 
     # Step 5: Save model and training report to GCS
@@ -122,3 +122,4 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f"Training pipeline failed: {e}")
         raise e
+    

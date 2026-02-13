@@ -1,6 +1,6 @@
 from datetime import datetime
 import re
-import argparse.ArgumentTypeError
+import argparse
 
 def int_or_float(value):
     try:
@@ -18,10 +18,10 @@ def int_or_float(value):
 
 def valid_bq_path(value):
     try:
-        project, dataset, value = re.findall(r'^(.*)\.(.*)\.(.*)$', value)
+        project, dataset, table = re.findall(r'^(.*)\.(.*)\.(.*)$', value)[0]
         return value
     except ValueError:
-        raise argparse.ArgumentTypeError(f"bq path should be in `project.dataset.table` format. Found {value}.")
+        raise argparse.ArgumentTypeError(f"bq path should be in `project.dataset.table` format. Found `{value}`.")
 
 
 def valid_datetime(value):

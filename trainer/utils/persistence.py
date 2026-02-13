@@ -1,5 +1,5 @@
 # task.py
-import argparse.Namespace
+import argparse
 import logging
 
 from google.cloud import storage

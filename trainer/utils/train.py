@@ -10,7 +10,7 @@ from tensorflow.keras.backend import epsilon
 import numpy as np
 import pandas as pd
 
-import config
+import trainer.config as config
 
 logger = logging.getLogger(__name__)
 

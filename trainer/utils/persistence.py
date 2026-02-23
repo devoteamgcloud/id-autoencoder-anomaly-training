@@ -5,7 +5,7 @@ import logging
 from google.cloud import storage
 from tensorflow import keras
 
-import config
+import trainer.config as config
 
 logger = logging.getLogger(__name__)
 

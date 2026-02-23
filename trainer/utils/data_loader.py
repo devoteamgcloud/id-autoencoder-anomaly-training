@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-import config
+import trainer.config as config
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ def fetch_train_and_val(args):
             start_date_val = (args.end_train_date - timedelta(days=args.validation_interval - 1)).strftime('%Y-%m-%d')
             end_date_val = args.end_train_date.strftime('%Y-%m-%d')
         
-        query_train: str = f"SELECT * FROM `{args.bq_training_data_path}` WHERE (EXTRACT(DATE FROM {args.time_column}) BETWEEN '{start_date_train}' AND '{end_date_train}')"
+        query_train: str = f"SELECT * FROM `{args.bq_training_data_path}` WHERE (EXTRACT(DATE FROM {args.time_column}) BETWEEN '{start_date_train}' AND '{end_date_train}') AND "
         if start_date_val:
             query_val: str = f"SELECT * FROM `{args.bq_training_data_path}` WHERE (EXTRACT(DATE FROM {args.time_column}) BETWEEN '{start_date_val}' AND '{end_date_val}')"
         else:

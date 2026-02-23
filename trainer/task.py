@@ -4,12 +4,12 @@ from datetime import datetime
 import logging
 import os
 
-import config
-from utils.data_loader import fetch_train_and_val, get_features, get_train_generator_and_val_set, create_tf_dataset
-from utils.train import train_model, find_threshold
-from utils.persistence import save_model_and_reports
-from utils.report_generator import generate_training_report, generate_threshold_report
-from args_validator import int_or_float, valid_bq_path, valid_datetime
+import trainer.config as config
+from trainer.utils.data_loader import fetch_train_and_val, get_features, get_train_generator_and_val_set, create_tf_dataset
+from trainer.utils.train import train_model, find_threshold
+from trainer.utils.persistence import save_model_and_reports
+from trainer.utils.report_generator import generate_training_report, generate_threshold_report
+from trainer.args_validator import int_or_float, valid_bq_path, valid_datetime
 
 # Logging Configuration
 logging.basicConfig(
@@ -27,7 +27,11 @@ def run_training_pipeline(args: argparse.Namespace):
     if args.get_new_data:
         fetch_train_and_val(args)
     else:
-        data_exists = os.path.exists(config.TRAIN_PATH) and os.path.exists(config.VAL_PATH)
+        data_exists = (
+            (os.path.exists(config.TRAIN_PATH) and os.path.exists(config.VAL_PATH))
+            or
+            (os.path.exists('../' + config.TRAIN_PATH) and os.path.exists('../' + config.VAL_PATH))
+        )
         if data_exists:
             logger.info("Using existing local parquet files for training and validation data.")
         else:
@@ -122,4 +126,3 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f"Training pipeline failed: {e}")
         raise e
-    

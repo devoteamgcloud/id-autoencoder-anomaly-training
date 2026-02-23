@@ -5,12 +5,15 @@ from typing import Any
 
 from tensorflow import keras
 import matplotlib.pyplot as plt
+import matplotlib
 import seaborn as sns
 import numpy as np
 
-import config
+import trainer.config as config
 
 logger = logging.getLogger(__name__)
+
+matplotlib.use('Agg')
 
 def generate_training_report(
     args: argparse.Namespace,
@@ -49,22 +52,40 @@ def generate_threshold_report(
     all_errors_train: np.ndarray,
     all_errors_val: np.ndarray
 ) -> None:
+    
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
-    # Define the versions we want to plot
+    # Data to be used for visualization
+    train_size = min(len(all_errors_train), 1_500_000)
+    val_size = min(len(all_errors_val), 1_500_000)
+    
+    train_data = np.random.choice(all_errors_train, size=train_size, replace=False) + 1e-9
+    val_data = np.random.choice(all_errors_val, size=val_size, replace=False) + 1e-9
+    
+    if len(all_errors_train) >= 1_500_000:
+        logger.info(f'Train data is too big ({len(all_errors_train):,} >= 1,500,000), using sample data')
+    if len(all_errors_val) >= 1_500_000:
+        logger.info(f'Validation data is too big ({len(all_errors_val):,} >= 1,500,000), using sample data')
+
     scales = [('Linear Scale', False), ('Log Scale', True)]
+    
     for i, (title, use_log) in enumerate(scales):
         ax = axes[i]
-        sns.histplot(np.random.choice(all_errors_train, size=min(len(all_errors_train), len(all_errors_train)), replace=False), bins='auto', color='blue', label='Train', 
-                    kde=True, log_scale=use_log, ax=ax)
-        sns.histplot(all_errors_val, bins='auto', color='orange', label='Val', 
-                    kde=True, log_scale=use_log, ax=ax)
+        
+        sns.histplot(train_data, bins=50, color='blue', label='Train', 
+                     kde=False, log_scale=use_log, ax=ax)
+        sns.histplot(val_data, bins=50, color='orange', label='Val', 
+                     kde=False, log_scale=use_log, ax=ax)
+        
         ax.axvline(threshold, color='red', linestyle='--', 
-                label=f'Threshold ({args.quantile_threshold})')
+                   label=f'Threshold ({args.quantile_threshold})')
+        
         ax.set_title(f'Error Distribution ({title})')
         ax.set_xlabel('Reconstruction Error')
         ax.set_ylabel('Count' if not use_log else 'Count (Log Scale)')
         ax.legend()
         ax.grid(True, alpha=0.3)
+        
     plt.tight_layout()
     plt.savefig(f"{config.MODEL_PATH}/{args.model_name}_{args.curr_date_str}_error_distribution.png")
+    plt.close(fig)

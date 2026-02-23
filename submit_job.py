@@ -17,7 +17,7 @@ kwargs = {
     "gcs-path": "finnet-model-output-temp",
     "bq-training-data-path": "finnet-data-platform.phase2_dev.ml_features",
     "id-columns": ["customer_id", "merchant_id", "cust_email", "cust_msisdn"],
-    "drop-columns": ["sof_entropy", "payment_code_entropy", "payment_code", "trx_id"],
+    "drop-columns": ["sof_entropy", "payment_code_entropy", "payment_code", "trx_id", "is_aggregator_merchant"],
     "impute-columns": ["c_amount_std_30d", "c_amount_zscore_30d"],
     "log-scale-columns": [
         "amount", "m_amount_mean_30d", "m_amount_std_30d", "m_tx_count_24h",
@@ -28,7 +28,10 @@ kwargs = {
     ],
     "mmc-encoding-columns": ["sof_id"],
     "time-column": "created_at",
-    "epochs": 300
+    "epochs": 25,
+    "quantile_threshold": 0.95,
+    "n_hidden": 3,
+    "latent_dim": 0.9,
 }
 
 def kwargs_to_list(kwargs):

@@ -1,0 +1,20 @@
+Metadata-Version: 2.4
+Name: autoencoder-anomaly-detection
+Version: 0.1.0
+Summary: Add your description here
+Requires-Python: >=3.13
+Description-Content-Type: text/markdown
+Requires-Dist: google-cloud-bigquery>=3.20.0
+Requires-Dist: google-api-core>=2.17.0
+Requires-Dist: google-cloud-storage
+Requires-Dist: pandas
+Requires-Dist: numpy
+Requires-Dist: scikit-learn
+Requires-Dist: matplotlib
+Requires-Dist: tensorflow
+Requires-Dist: tdigest
+Requires-Dist: fastparquet
+Requires-Dist: seaborn
+
+# Anomaly Detection Using Autoencoder + Vertex AI
+TODO

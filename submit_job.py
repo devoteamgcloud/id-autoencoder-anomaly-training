@@ -28,10 +28,11 @@ kwargs = {
     ],
     "mmc-encoding-columns": ["sof_id"],
     "time-column": "created_at",
-    "epochs": 200,
+    "epochs": 1,
     "quantile-threshold": 0.95,
     "n-hidden": 4,
     "latent-dim": 0.9,
+    "taken-group": 0,
 }
 
 def kwargs_to_list(kwargs):

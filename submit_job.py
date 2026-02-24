@@ -1,4 +1,5 @@
 import os
+import json
 import glob
 from google.cloud import aiplatform
 from google.cloud import storage
@@ -13,27 +14,8 @@ APP_NAME = "autoencoder-anomaly-detection"
 CONTAINER_URI = "asia-docker.pkg.dev/vertex-ai/training/tf-gpu.2-17.py310:latest"
 
 # Task Arguments
-kwargs = {
-    "gcs-path": "finnet-model-output-temp",
-    "bq-training-data-path": "finnet-data-platform.phase2_dev.ml_features",
-    "id-columns": ["customer_id", "merchant_id", "cust_email", "cust_msisdn"],
-    "drop-columns": ["sof_entropy", "payment_code_entropy", "payment_code", "trx_id", "is_aggregator_merchant"],
-    "impute-columns": ["c_amount_std_30d", "c_amount_zscore_30d"],
-    "log-scale-columns": [
-        "amount", "m_amount_mean_30d", "m_amount_std_30d", "m_tx_count_24h",
-        "c_amount_mean_30d", "c_amount_std_30d", "c_tx_count_24h",
-        "m_tx_count_2h", "m_amount_sum_2h", "c_tx_count_2h", "c_amount_sum_2h",
-        "m_tx_count_30m", "c_tx_count_30m",
-        "amount_vs_m_mean", "amount_vs_c_mean", "cm_tx_count_7d"
-    ],
-    "mmc-encoding-columns": ["sof_id"],
-    "time-column": "created_at",
-    "epochs": 1,
-    "quantile-threshold": 0.95,
-    "n-hidden": 4,
-    "latent-dim": 0.9,
-    "taken-group": 0,
-}
+with open('config.json', 'r') as f:
+    kwargs = json.load(f)
 
 def kwargs_to_list(kwargs):
     """Converts dict to flat list format: ['--arg', 'val', '--list', 'item1', 'item2']"""

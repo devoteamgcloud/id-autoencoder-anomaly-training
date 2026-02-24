@@ -47,14 +47,14 @@ def build_and_upload_package():
     filename = os.path.basename(local_path)
     
     # Upload to GCS
-    print(f"2. Uploading {filename} to {BUCKET_URI}/trainer_code/...")
+    print(f"2. Uploading {filename} to {BUCKET_URI}/bin/...")
     storage_client = storage.Client(project=PROJECT_ID)
     bucket_name = BUCKET_URI.replace("gs://", "").split("/")[0]
     bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(f"trainer_code/{filename}")
+    blob = bucket.blob(f"bin/{filename}")
     blob.upload_from_filename(local_path)
     
-    gcs_uri = f"gs://{bucket_name}/trainer_code/{filename}"
+    gcs_uri = f"gs://{bucket_name}/bin/{filename}"
     print(f"   Uploaded to: {gcs_uri}")
     return gcs_uri
 
@@ -85,7 +85,7 @@ def submit_package_job():
     # 4. Submit and Run the job
     with open('jobspec.json', 'r') as f:
         job_spec = json.load(f)
-        
+
     job.run(
         **job_spec,
         args=kwargs_to_list(kwargs),

@@ -9,9 +9,9 @@ The system trains an autoencoder on normal transaction data from BigQuery and us
 ## Quick Start
 
 1. **Configure your training parameters** by filling out `config.json`:
-   \`\`\`bash
+   ```bash
    cp config.example.json config.json
-   \`\`\`
+   ```
    
    Edit `config.json` with your specific parameters:
    - GCP project and data paths
@@ -20,9 +20,9 @@ The system trains an autoencoder on normal transaction data from BigQuery and us
    - Data date ranges and filtering options
 
 2. **Configure your Vertex AI job specifications** by filling out `jobspec.json`:
-   \`\`\`bash
+   ```bash
    cp jobspec.example.json jobspec.json
-   \`\`\`
+   ```
    
    Edit `jobspec.json` with your compute requirements:
    - Machine type and accelerators
@@ -30,9 +30,9 @@ The system trains an autoencoder on normal transaction data from BigQuery and us
    - Resource allocation
 
 3. **Submit the training job** to Vertex AI:
-   \`\`\`bash
+   ```bash
    python3 submit_job.py
-   \`\`\`
+   ```
 
 ## Configuration Parameters
 

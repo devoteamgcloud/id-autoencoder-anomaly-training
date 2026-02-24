@@ -28,10 +28,10 @@ kwargs = {
     ],
     "mmc-encoding-columns": ["sof_id"],
     "time-column": "created_at",
-    "epochs": 25,
-    "quantile_threshold": 0.95,
-    "n_hidden": 3,
-    "latent_dim": 0.9,
+    "epochs": 200,
+    "quantile-threshold": 0.95,
+    "n-hidden": 4,
+    "latent-dim": 0.9,
 }
 
 def kwargs_to_list(kwargs):
@@ -101,6 +101,7 @@ def submit_package_job():
 
     # 4. Submit and Run the job
     job.run(
+        service_account="781750826172-compute@developer.gserviceaccount.com",
         machine_type="n1-standard-8", 
         accelerator_type="NVIDIA_TESLA_T4", 
         accelerator_count=1,                

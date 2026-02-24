@@ -1,14 +1,16 @@
 import os
 import uuid
-from typing import List, Tuple, Generator
+from typing import Dict, List, Tuple, Generator
 from datetime import timedelta
 import logging
 import gc
+import json
 
 from google.cloud import bigquery, storage
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from tdigest import TDigest  # For quantile estimation
 
 import trainer.config as config
 
@@ -122,9 +124,12 @@ def fetch_train_and_val(args):
             start_date_val = (args.end_train_date - timedelta(days=args.validation_interval - 1)).strftime('%Y-%m-%d')
             end_date_val = args.end_train_date.strftime('%Y-%m-%d')
         
-        query_train: str = f"SELECT * FROM `{args.bq_training_data_path}` WHERE (EXTRACT(DATE FROM {args.time_column}) BETWEEN '{start_date_train}' AND '{end_date_train}') AND "
+        # Compile filter
+        group_filter = f"is_aggregator_merchant = {args.taken_group}" if args.taken_group >= 0 else "true"
+
+        query_train: str = f"SELECT * FROM `{args.bq_training_data_path}` WHERE (EXTRACT(DATE FROM {args.time_column}) BETWEEN '{start_date_train}' AND '{end_date_train}') AND {group_filter}"
         if start_date_val:
-            query_val: str = f"SELECT * FROM `{args.bq_training_data_path}` WHERE (EXTRACT(DATE FROM {args.time_column}) BETWEEN '{start_date_val}' AND '{end_date_val}')"
+            query_val: str = f"SELECT * FROM `{args.bq_training_data_path}` WHERE (EXTRACT(DATE FROM {args.time_column}) BETWEEN '{start_date_val}' AND '{end_date_val}') AND {group_filter}"
         else:
             query_val = None
 
@@ -170,11 +175,11 @@ def get_features(
     Get the features of the training data as a list of strings of feature names
     """
     # Assert file exists
-    filenames = os.listdir('data')
+    filenames = os.listdir(config.TRAIN_PATH)
     assert filenames, "No data found."
 
     # Read data
-    df = pd.read_parquet(f'data/{filenames[0]}')
+    df = pd.read_parquet(os.path.join(config.TRAIN_PATH, filenames[0]))
     features = set(list(df.columns))
 
     # Dropped Columns
@@ -204,7 +209,8 @@ def preprocess(
     impute_columns: List[str],
     log_scale_columns: List[str],
     mmc_encoding_columns: List[str],
-    time_column: str
+    time_column: str,
+    mmc_mapping: Dict[str, Dict[str, Dict[str, float]]]
 ) -> pd.DataFrame:      
     """Preprocess the dataframe into all-numeric and normalized values"""
     # Drop ID columns
@@ -218,11 +224,10 @@ def preprocess(
     df.fillna(value=0.0, inplace=True)
 
     # Perform Mean - Median - Count encoding
-    # TODO: Save the encoding mapping
     for col in mmc_encoding_columns:
-        df[f'cat-{col}-mean'] = df[col].map(np.log10(df.groupby(col)['amount'].mean()+1).astype(np.float32).to_dict()).fillna(0.0)
-        df[f'cat-{col}-median'] = df[col].map(np.log10(df.groupby(col)['amount'].quantile(0.5)+1).astype(np.float32).to_dict()).fillna(0.0)
-        df[f'cat-{col}-count'] = df[col].map(np.log10(df.groupby(col)['amount'].count()+1).to_dict()).fillna(0.0)
+        df[f'cat-{col}-mean'] = df[col].map(mmc_mapping[col]['mean']).fillna(0.0)
+        df[f'cat-{col}-median'] = df[col].map(mmc_mapping[col]['median']).fillna(0.0)
+        df[f'cat-{col}-count'] = df[col].map(mmc_mapping[col]['count']).fillna(0.0)
     df.drop(mmc_encoding_columns, inplace=True, axis=1)
 
     # Perform Log Scaling
@@ -240,6 +245,63 @@ def preprocess(
     assert len(features) != 0, "Failed to build feature list"
     
     return df[features]
+
+
+def create_mmc_mapping(mmc_encoding_columns: List[str]) -> Dict[str, Dict[str, Dict[str, float]]]:
+    """Create the mapping for mean, median, and count encoding for each column in mmc_encoding_columns"""
+    mmc_mapping = {}
+
+    for col in mmc_encoding_columns:
+        mean_mapping = {}
+        count_mapping = {}
+        median_mapping = {}
+
+        for filename in os.listdir(config.TRAIN_PATH):
+            df = pd.read_parquet(
+                f'{config.TRAIN_PATH}/{filename}',
+                columns=[col, 'amount']
+            )
+
+            grouped = df.groupby(col)['amount']
+
+            # sum and count (exact)
+            amount_sum = grouped.sum()
+            amount_count = grouped.count()
+
+            # update sum & count
+            for key in amount_sum.index:
+                mean_mapping[key] = mean_mapping.get(key, 0.0) + amount_sum[key]
+                count_mapping[key] = count_mapping.get(key, 0) + amount_count[key]
+
+            # update median sketch
+            for key, values in grouped:
+                if key not in median_mapping:
+                    median_mapping[key] = TDigest()
+                median_mapping[key].batch_update(values.values)
+
+        # finalize statistics
+        final_mean = {
+            k: float(np.log10(mean_mapping[k] / count_mapping[k] + 1))
+            for k in mean_mapping
+        }
+
+        final_count = {
+            k: float(np.log10(count_mapping[k] + 1))
+            for k in count_mapping
+        }
+
+        final_median = {
+            k: float(np.log10(median_mapping[k].percentile(50) + 1))
+            for k in median_mapping
+        }
+
+        mmc_mapping[col] = {
+            'mean': final_mean,
+            'count': final_count,
+            'median': final_median
+        }
+    
+    return mmc_mapping
 
 
 def get_train_generator_and_val_set(
@@ -263,6 +325,16 @@ def get_train_generator_and_val_set(
         "mmc_encoding_columns": mmc_encoding_columns,
         "time_column": time_column
     }
+
+    # Generate MMC mapping
+    mmc_mapping = create_mmc_mapping(mmc_encoding_columns)
+    kwargs['mmc_mapping'] = mmc_mapping
+
+    # Save the MMC mapping to a local JSON file for later use in persistence.py
+    mmc_mapping_path = f"{config.MODEL_PATH}/mmc_mapping.json"
+    with open(mmc_mapping_path, 'w') as f:
+        json.dump(mmc_mapping, f, indent=4)
+             
 
     def _generator():
         filenames = os.listdir(config.TRAIN_PATH)
@@ -309,6 +381,9 @@ def create_tf_dataset(
     train_dataset = train_dataset.batch(batch_size)
     train_dataset = train_dataset.prefetch(tf.data.AUTOTUNE)
 
-    val_dataset = tf.data.Dataset.from_tensor_slices(val_df)
+    if len(val_df) > 0:
+        val_dataset = tf.data.Dataset.from_tensor_slices(val_df)
+    else:
+        val_dataset = None
     
     return train_dataset, val_dataset

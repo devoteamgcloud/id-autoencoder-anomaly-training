@@ -32,4 +32,15 @@ def valid_datetime(value):
         return date
     except ValueError:
         raise argparse.ArgumentTypeError(f"date should be in YYYY-MM-DD format. found {value}.")
+
+
+def valid_postfix(value):
+    if value == '':
+        return value
+    if not value.startswith('_'):
+        value  = '_' + value
         
+    # Only allow alphanumeric characters without underscore (except at the beginning)
+    if not re.match(r'^_[a-zA-Z0-9]+$', value):
+        raise argparse.ArgumentTypeError(f"postfix should only contain alphanumeric characters and start with an underscore. found {value}.")
+    return value

@@ -85,7 +85,7 @@ def train_model(
     )
 
     # -- Define callbacks
-    model_name = datetime.now().strftime(f"{args.model_name}_{args.curr_date_str}.h5")
+    model_name = datetime.now().strftime(f"{args.model_name}_{args.curr_date_str}{args.postfix}.keras")
     early_stopping = keras.callbacks.EarlyStopping(
         monitor='loss',
         patience=10,
@@ -109,9 +109,10 @@ def train_model(
 
     logger.info("Starting training...")
     try:
+        val_data = None if val is None else val.batch(args.batch_size)
         history = autoencoder.fit(
             train,
-            validation_data=val.batch(args.batch_size),
+            validation_data=val_data,
             epochs=args.epochs,
             batch_size=args.batch_size,
             callbacks=callbacks,
@@ -142,9 +143,9 @@ def find_threshold(
         all_errors_train.append(loss)
     all_errors_train = np.concatenate(all_errors_train, axis=0)
     # Compute val error
-    if 'val_r2_score' in history.history:
+    try:
         all_errors_val = np.sqrt(np.mean(np.square(autoencoder(val_df, training=False) - val_df), axis=1))
-    else:
+    except Exception as e:
         all_errors_val = np.array([])
 
     # Find threshold based on quantile of training error distribution

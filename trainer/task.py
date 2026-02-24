@@ -9,7 +9,7 @@ from trainer.utils.data_loader import fetch_train_and_val, get_features, get_tra
 from trainer.utils.train import train_model, find_threshold
 from trainer.utils.persistence import save_model_and_reports
 from trainer.utils.report_generator import generate_training_report, generate_threshold_report
-from trainer.args_validator import int_or_float, valid_bq_path, valid_datetime
+from trainer.args_validator import int_or_float, valid_bq_path, valid_datetime, valid_postfix
 
 # Logging Configuration
 logging.basicConfig(
@@ -84,6 +84,9 @@ if __name__ == '__main__':
     parser.add_argument('--start-train-interval', type=int, default=90, help='Starting date filter for the training data in the form of how many days before the end date')
     parser.add_argument('--validation-interval', type=int, default=1, help='Number of days taken (from most recent data) for validation dataset')
 
+    # Data filter
+    parser.add_argument('--taken-group', type=int, default=0, help='Group number for data sampling. If you want to use the whole dataset, set it to -1')
+
     # Column Names
     parser.add_argument('--id-columns', nargs='+', required=True, help='List of identifier columns')
     parser.add_argument('--drop-columns', nargs='+', required=True, help='List of columns that want to be dropped')
@@ -105,6 +108,7 @@ if __name__ == '__main__':
 
     # Model metadata
     parser.add_argument('--model-name', type=str, default='autoencoder', help='Name of the model to be saved')
+    parser.add_argument('--postfix', type=valid_postfix, default='', help='Additional string to be appended to the model name and report name for better identification')
 
     # Misc
     parser.add_argument('--get-new-data', type=bool, default=True, help='Whether to get new data from BigQuery or use existing local parquet files')
@@ -118,7 +122,15 @@ if __name__ == '__main__':
         if not args.project_id:
             args.project_id = args.bq_training_data_path.split('.')[0]
     args.curr_date_str = datetime.now().strftime('%Y%m%d')
-    
+
+
+    # Create Paths
+    if not os.path.exists(config.TRAIN_PATH):
+        os.makedirs(config.TRAIN_PATH)
+    if not os.path.exists(config.VAL_PATH):
+        os.makedirs(config.VAL_PATH)
+    if not os.path.exists(config.MODEL_PATH):
+        os.makedirs(config.MODEL_PATH)
 
     # ########## Start process
     try:

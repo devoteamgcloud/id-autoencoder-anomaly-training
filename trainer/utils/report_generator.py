@@ -2,8 +2,8 @@
 import logging
 import argparse
 from typing import Any
+import os
 
-from tensorflow import keras
 import matplotlib.pyplot as plt
 import matplotlib
 import seaborn as sns
@@ -43,7 +43,10 @@ def generate_training_report(
         axes[1].grid(True)
 
         plt.tight_layout()
-        plt.savefig(f"{config.MODEL_PATH}/{args.model_name}_{args.curr_date_str}.png")
+        if not os.path.exists(config.MODEL_PATH):
+            os.makedirs(config.MODEL_PATH)
+        plt.savefig(f"{config.MODEL_PATH}/loss.png")
+        # plt.close(fig)
 
 
 def generate_threshold_report(
@@ -87,5 +90,5 @@ def generate_threshold_report(
         ax.grid(True, alpha=0.3)
         
     plt.tight_layout()
-    plt.savefig(f"{config.MODEL_PATH}/{args.model_name}_{args.curr_date_str}_error_distribution.png")
-    plt.close(fig)
+    plt.savefig(f"{config.MODEL_PATH}/error_distribution.png")
+    # plt.close(fig)

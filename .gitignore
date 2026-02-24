@@ -4,6 +4,7 @@
 # Byte-compiled / optimized / DLL files
 sandbox.ipynb
 trainer.egg-info
+autoencoder_anomaly_detection.egg-info
 dist
 
 # Configurations

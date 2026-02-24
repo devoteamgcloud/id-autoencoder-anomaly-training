@@ -85,7 +85,7 @@ def train_model(
     )
 
     # -- Define callbacks
-    model_name = datetime.now().strftime(f"{args.model_name}_{args.curr_date_str}{args.postfix}.keras")
+    model_name = f"{args.model_name}_{args.curr_date_str}{args.postfix}.keras"
     early_stopping = keras.callbacks.EarlyStopping(
         monitor='loss',
         patience=10,

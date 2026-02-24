@@ -8,7 +8,7 @@ import trainer.config as config
 from trainer.utils.data_loader import fetch_train_and_val, get_features, get_train_generator_and_val_set, create_tf_dataset
 from trainer.utils.train import train_model, find_threshold
 from trainer.utils.persistence import save_model_and_reports
-from trainer.utils.report_generator import generate_training_report, generate_threshold_report
+from trainer.utils.report_generator import generate_training_report, generate_threshold_report, generate_hyperparameters_report
 from trainer.args_validator import int_or_float, valid_bq_path, valid_datetime, valid_postfix
 
 # Logging Configuration
@@ -56,11 +56,12 @@ def run_training_pipeline(args: argparse.Namespace):
     logger.info("Starting model training...")
     autoencoder, history, model_name = train_model(args, features, train, val)
 
-    # Step 4: Generate training report
+    # Step 4: Generate training report & hyperparameters
     logger.info("Generating training and threshold reports...")
     generate_training_report(args, history)
     threshold, all_errors_train, all_errors_val = find_threshold(args, autoencoder, train, val_df, history)
     generate_threshold_report(args, threshold, all_errors_train, all_errors_val)
+    generate_hyperparameters_report(args, threshold, features)
 
     # Step 5: Save model and training report to GCS
     logger.info("Saving model and reports to GCS...")
@@ -78,6 +79,7 @@ if __name__ == '__main__':
     # Paths
     parser.add_argument('--gcs-path', type=str, required=True, help='Destination GCS path for model training results, temporary data dump, and evaluation')
     parser.add_argument('--bq-training-data-path', type=valid_bq_path, required=True, help='ML Training source table path in BigQuery')
+    parser.add_argument('--bq-report-path', type=valid_bq_path, required=True, help='BigQuery table path for saving training report and metadata')
 
     # Data date range
     parser.add_argument('--end-train-date', type=valid_datetime, default='', help='Ending date filter for the training data in the format of YYYY-MM-DD')

@@ -40,6 +40,7 @@ The system trains an autoencoder on normal transaction data from BigQuery and us
 - `project-id`: GCP Project ID
 - `gcs-path`: Destination GCS path for model artifacts and temporary data
 - `bq-training-data-path`: BigQuery source table path
+- `bq-report-path`: BigQuery target table path for report
 - `end-train-date`: Training data end date (YYYY-MM-DD)
 - `start-train-interval`: Days before end date to start training data (default: 90)
 - `validation-interval`: Days for validation dataset (default: 1)

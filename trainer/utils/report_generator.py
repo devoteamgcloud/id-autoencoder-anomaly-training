@@ -1,8 +1,9 @@
 # task.py
 import logging
 import argparse
-from typing import Any
+from typing import Any, List
 import os
+import json
 
 import matplotlib.pyplot as plt
 import matplotlib
@@ -92,3 +93,39 @@ def generate_threshold_report(
     plt.tight_layout()
     plt.savefig(f"{config.MODEL_PATH}/error_distribution.png")
     # plt.close(fig)
+
+
+def generate_hyperparameters_report(
+    args: argparse.Namespace,
+    threshold: float,
+    features: List[str]
+) -> None:
+    hyperparams = {
+        'batch-size': args.batch_size,
+        'epochs': args.epochs,
+        'n-hidden': args.n_hidden,
+        'latent-dim': args.latent_dim,
+        'activation': args.activation,
+        'learning-rate': args.learning_rate,
+        'quantile': args.quantile_threshold,
+        'threshold': threshold
+    }
+
+    with open(f"{config.MODEL_PATH}/hyperparameters.txt", "w") as f:
+        f.write(json.dumps(hyperparams, indent=4))
+    
+
+    # Specific for this model, also safe the columns used for training & taken group info
+    columns_info = {
+        'features': features,
+        'id-columns': args.id_columns,
+        'drop-columns': args.drop_columns,
+        'impute-columns': args.impute_columns,
+        'log-scale-columns': args.log_scale_columns,
+        'mmc-encoding-columns': args.mmc_encoding_columns,
+        'time-column': args.time_column,
+        'taken-group': args.taken_group
+    }
+
+    with open(f"{config.MODEL_PATH}/columns_info.json", "w") as f:
+        f.write(json.dumps(columns_info, indent=4))

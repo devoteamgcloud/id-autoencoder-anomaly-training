@@ -2,6 +2,7 @@
     "project-id": null,
     "gcs-path": "",
     "bq-training-data-path": "",
+    "bq-report-path": "",
     "end-train-date": "",
     "start-train-interval": 90,
     "validation-interval": 1,

@@ -1,0 +1,8 @@
+{
+    "service_account": "",
+    "machine_type": "nX-standard-X",
+    "accelerator_type": "NVIDIA_TESLA_T4",
+    "accelerator_count": 1,
+    "replica_count": 1,
+    "sync": true
+}

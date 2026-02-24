@@ -1,6 +1,12 @@
+# Virtual Environment
 .venv
+
+# Byte-compiled / optimized / DLL files
 sandbox.ipynb
 trainer.egg-info
 dist
+
+# Configurations
 config.json
+jobspec.json
 run.sh

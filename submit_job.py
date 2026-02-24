@@ -83,14 +83,11 @@ def submit_package_job():
     print(f"3. Submitting job to {REGION}...")
 
     # 4. Submit and Run the job
+    with open('jobspec.json', 'r') as f:
+        job_spec = json.load(f)
     job.run(
-        service_account="781750826172-compute@developer.gserviceaccount.com",
-        machine_type="n1-standard-8", 
-        accelerator_type="NVIDIA_TESLA_T4", 
-        accelerator_count=1,                
-        replica_count=1,
+        **job_spec,
         args=kwargs_to_list(kwargs),
-        sync=True 
     )
 
 if __name__ == '__main__':

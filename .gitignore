@@ -3,3 +3,4 @@ sandbox.ipynb
 trainer.egg-info
 dist
 config.json
+run.sh

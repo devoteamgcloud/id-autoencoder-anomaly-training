@@ -180,7 +180,8 @@ def get_features(
 
     # Read data
     df = pd.read_parquet(os.path.join(config.TRAIN_PATH, filenames[0]))
-    features = set(list(df.columns))
+    raw_features = list(df.columns)
+    features = set(raw_features)
 
     # Dropped Columns
     features -= set(id_columns)
@@ -198,7 +199,7 @@ def get_features(
     del df
     gc.collect()
 
-    return features
+    return features, raw_features
     
 
 def preprocess(

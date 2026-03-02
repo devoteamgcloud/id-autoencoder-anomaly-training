@@ -48,7 +48,7 @@ def run_training_pipeline(args: argparse.Namespace):
         'mmc_encoding_columns': args.mmc_encoding_columns,
         'time_column': args.time_column
     }
-    features = get_features(**kwargs)
+    features, raw_features = get_features(**kwargs)
     generator, val_df = get_train_generator_and_val_set(features, **kwargs)
     train, val = create_tf_dataset(generator, val_df, features, args.batch_size)
 
@@ -61,7 +61,7 @@ def run_training_pipeline(args: argparse.Namespace):
     generate_training_report(args, history)
     threshold, all_errors_train, all_errors_val = find_threshold(args, autoencoder, train, val_df, history)
     generate_threshold_report(args, threshold, all_errors_train, all_errors_val)
-    generate_hyperparameters_report(args, threshold, features)
+    generate_hyperparameters_report(args, threshold, features, raw_features)
 
     # Step 5: Save model and training report to GCS
     logger.info("Saving model and reports to GCS...")

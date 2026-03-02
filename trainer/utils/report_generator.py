@@ -98,7 +98,8 @@ def generate_threshold_report(
 def generate_hyperparameters_report(
     args: argparse.Namespace,
     threshold: float,
-    features: List[str]
+    features: List[str],
+    raw_features: List[str]
 ) -> None:
     hyperparams = {
         'batch-size': args.batch_size,
@@ -118,6 +119,7 @@ def generate_hyperparameters_report(
     # Specific for this model, also safe the columns used for training & taken group info
     columns_info = {
         'features': features,
+        'raw_features': raw_features,
         'id-columns': args.id_columns,
         'drop-columns': args.drop_columns,
         'impute-columns': args.impute_columns,

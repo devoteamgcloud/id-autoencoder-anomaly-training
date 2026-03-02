@@ -1,4 +1,5 @@
 {
+    "features": ["c_amount_sum_2h", "m_amount_zscore_30d", "c_amount_std_30d", "c_amount_zscore_30d", "sof_switch_count", "amount_vs_m_mean", "m_amount_sum_2h", "is_decline", "c_amount_mean_30d", "m_decline_ratio_7d", "cm_tx_count_7d", "duplicate_count", "m_amount_std_30d", "m_tx_count_2h", "amount_vs_c_mean", "is_success", "m_tx_count_24h", "is_night", "amount", "c_tx_count_30m", "c_decline_ratio_7d", "dayofweek", "m_tx_count_30m", "c_tx_count_24h", "c_tx_count_2h", "m_amount_mean_30d", "cat-sof_id-mean", "cat-sof_id-median", "cat-sof_id-count", "created_at_sin", "created_at_cos"],
     "id-columns": ["customer_id", "merchant_id", "cust_email", "cust_msisdn"],
     "drop-columns": ["sof_entropy", "payment_code_entropy", "payment_code", "trx_id", "is_aggregator_merchant"],
     "impute-columns": ["c_amount_std_30d", "c_amount_zscore_30d"],

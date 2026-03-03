@@ -126,7 +126,7 @@ def save_model_and_reports(
 
         # Combine into a single record
         record = {
-            "training_date": datetime.strptime(args.curr_date_str, "%Y%m%d").date(),
+            "training_date": datetime.strptime(args.curr_date_str, "%Y%m%d").strftime("%Y-%m-%d"),
             **hyperparams_data,
             **columns_info_data,
             "postfix": args.postfix

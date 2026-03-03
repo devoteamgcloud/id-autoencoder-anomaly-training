@@ -13,6 +13,8 @@ def kwargs_to_list(kwargs):
         args_list.append(arg_key)
         if isinstance(value, list):
             args_list.extend(map(str, value))
+        if isinstance(value, None):
+            pass
         else:
             args_list.append(str(value))
     return args_list

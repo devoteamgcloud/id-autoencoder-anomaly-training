@@ -339,12 +339,15 @@ def create_stat_mapping(stat_encoding_columns: List[str]) -> Dict[str, Dict[str,
             for k in max_mapping
         }
 
-        final_quantile = {
-            f'q{i}': {
-                k: float(np.log10(quantile_mapping[k].percentile(i) + 1))
-                for k in quantile_mapping
-            } for i in range(10,91,10)
-        }
+        final_quantile = {}  # Final quantile is done differently as it may produce NaN
+        for i in range(10,91,10):
+            final_quantile[f'q{i}'] = {}
+            for k in quantile_mapping:
+                result = float(np.log10(quantile_mapping[k].percentile(i) + 1))
+                if np.isnan(result):
+                    result = min_mapping + (max_mapping[k] - min_mapping[k]) * i/100
+                final_quantile[f'q{i}'][k] = np.log10(result+1)
+        
 
         stat_mapping[col] = {
             'mean': final_mean,

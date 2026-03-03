@@ -1,8 +1,30 @@
 #!/bin/bash
 set -e
 
-ARGS=$(python3 run.py)
+# Generate args from config.json using inline Python
+mapfile -t ARGS < <(
+python3 - <<'PY'
+import json
 
-echo "Running task.py with args: $ARGS"
+def kwargs_to_list(kwargs):
+    args_list = []
+    for key, value in kwargs.items():
+        arg_key = f"--{key}"
+        args_list.append(arg_key)
+        if isinstance(value, list):
+            args_list.extend(map(str, value))
+        else:
+            args_list.append(str(value))
+    return args_list
 
-python3 trainer/task.py $ARGS
+with open('config.json', 'r') as f:
+    kwargs = json.load(f)
+
+for arg in kwargs_to_list(kwargs):
+    print(arg)
+PY
+)
+
+echo "Running task.py with args: ${ARGS[*]}"
+
+python3 task.py "${ARGS[@]}"

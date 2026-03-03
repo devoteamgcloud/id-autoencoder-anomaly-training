@@ -13,7 +13,7 @@
     "log-scale-columns": [],
     "mmc-encoding-columns": [],
     "periodic-columns": [],
-    "time_column": "",
+    "time-column": "",
     "learning-rate": 0.001,
     "n-hidden": 3,
     "latent-dim": 0.5,

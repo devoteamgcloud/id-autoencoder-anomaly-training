@@ -352,6 +352,7 @@ def create_stat_mapping(stat_encoding_columns: List[str]) -> Dict[str, Dict[str,
                 )
             except Exception as e:
                 logger.warning(f'Failed to load chunk: {e}')
+                continue
 
             grouped = df.groupby(col)['amount']
 
@@ -429,7 +430,8 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) ->Tuple[Dict[str,
                 columns=[col for col, _ in ohe_columns]
             )
         except Exception as e:
-                logger.warning(f'Failed to load chunk: {e}')
+            logger.warning(f'Failed to load chunk: {e}')
+            continue
 
         # Value Count this chunk
         for col, _ in ohe_columns:
@@ -501,6 +503,8 @@ def get_train_generator_and_val_set(
                 )
             except Exception as e:
                 logger.warning(f'Failed to load chunk: {e}')
+                continue
+
             df = df.astype(np.float32)
             yield df, df  # Return twice for autoencoder architecture
             del df

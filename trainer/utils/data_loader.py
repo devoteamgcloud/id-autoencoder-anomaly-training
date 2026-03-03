@@ -345,10 +345,13 @@ def create_stat_mapping(stat_encoding_columns: List[str]) -> Dict[str, Dict[str,
         logger.info("Start computing statistics...")
 
         for filename in os.listdir(config.TRAIN_PATH):
-            df = pd.read_parquet(
-                f'{config.TRAIN_PATH}/{filename}',
-                columns=[col, 'amount']
-            )
+            try:
+                df = pd.read_parquet(
+                    f'{config.TRAIN_PATH}/{filename}',
+                    columns=[col, 'amount']
+                )
+            except Exception as e:
+                logger.warning(f'Failed to load chunk: {e}')
 
             grouped = df.groupby(col)['amount']
 
@@ -420,10 +423,14 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) ->Tuple[Dict[str,
     # Count the class count for every chunk
     for filename in os.listdir(config.TRAIN_PATH):
         # Load chunk
-        df = pd.read_parquet(
-            f'{config.TRAIN_PATH}/{filename}',
-            columns=[col for col, _ in ohe_columns]
-        )
+        try:
+            df = pd.read_parquet(
+                f'{config.TRAIN_PATH}/{filename}',
+                columns=[col for col, _ in ohe_columns]
+            )
+        except Exception as e:
+                logger.warning(f'Failed to load chunk: {e}')
+                
         # Value Count this chunk
         for col, _ in ohe_columns:
             for classname, cnt in df[col].value_counts().to_dict():

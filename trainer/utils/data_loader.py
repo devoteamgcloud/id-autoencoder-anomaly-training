@@ -1,10 +1,11 @@
 import os
 import uuid
-from typing import Dict, List, Tuple, Generator
+from typing import Dict, List, Tuple, Generator, Union, Literal
 from datetime import timedelta
 import logging
 import gc
 import json
+import re
 
 from google.cloud import bigquery, storage
 import numpy as np
@@ -15,6 +16,10 @@ from tdigest import TDigest  # For quantile estimation
 import trainer.config as config
 
 logger = logging.getLogger(__name__)
+
+# Constants
+NUMERICAL_PATTERN = r'-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?'
+PERIODIC_COLUMN_PATTERN = rf'^\s*({NUMERICAL_PATTERN}):({NUMERICAL_PATTERN})\s*$'
 
 # Util Functions
 def fetch_data(
@@ -169,7 +174,7 @@ def get_features(
     impute_columns: List[str],
     log_scale_columns: List[str],
     mmc_encoding_columns: List[str],
-    time_column: str
+    periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]]
 ) -> List[str]:
     """
     Get the features of the training data as a list of strings of feature names
@@ -187,13 +192,19 @@ def get_features(
     features -= set(id_columns)
     features -= set(drop_columns)
     features -= set(mmc_encoding_columns)
-    features -= {time_column}
+    features -= set(col for col, _ in periodic_columns)
 
     # New Columns
     features = list(features)
-    for col in mmc_encoding_columns:
+    for col in mmc_encoding_columns:  # MMC Encoding
         features += [f'cat-{col}-mean', f'cat-{col}-median', f'cat-{col}-count']
-    features += [time_column + '_sin', time_column + '_cos']
+    for col, period in periodic_columns:  # Periodic columns
+        infix = ""
+        if period == "time":
+            infix = "_time"
+        elif period == "year":
+            infix = "_year"
+        features += [col + infix + "_sin", col + infix + "_cos"]
 
     # Free memory
     del df
@@ -210,12 +221,11 @@ def preprocess(
     impute_columns: List[str],
     log_scale_columns: List[str],
     mmc_encoding_columns: List[str],
-    time_column: str,
+    periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]],
     mmc_mapping: Dict[str, Dict[str, Dict[str, float]]]
 ) -> pd.DataFrame:      
     """Preprocess the dataframe into all-numeric and normalized values"""
     # Drop ID columns
-    # TODO: Save the ID mapping
     df.drop(id_columns, inplace=True, axis=1)
 
     # Drop drop-columns
@@ -234,16 +244,32 @@ def preprocess(
     # Perform Log Scaling
     df[log_scale_columns] = np.log10(df[log_scale_columns]+1)
 
-    # Convert to time phasor
-    df['time_second'] = df[time_column].dt.hour*3600 + df[time_column].dt.minute*60 + df[time_column].dt.second
-    df[time_column + '_sin'] = np.sin(df['time_second'] * (np.pi/43200))
-    df[time_column + '_cos'] = np.cos(df['time_second'] * (np.pi/43200))
-    df.drop([time_column, 'time_second'], inplace=True, axis=1)
+    # Convert periodic columns to phasor
+    for col, period in periodic_columns:
 
-    # Create feature list
-    if len(features) == 0:
-        features = list(df.column)
-    assert len(features) != 0, "Failed to build feature list"
+        if isinstance(period, (float, int)):
+            scaled = df[col] / period * 2*np.pi
+            infix = ""
+        elif isinstance(period, str) and period not in {"time", "year"} and re.search(PERIODIC_COLUMN_PATTERN, period):
+            start, end = re.findall(PERIODIC_COLUMN_PATTERN, period)[0]
+            start, end = float(start), float(end)
+            scaled = (df[col] - start) / (end-start) * 2*np.pi
+            infix = ""
+        elif period == "time":
+            scaled = df[col].dt.hour*3600 + df[col].dt.minute*60 + df[col].dt.second
+            scaled /= 24 * 60 * 60  # Number of seconds in one day
+            scaled *= 2*np.pi
+            infix = "_time"
+        elif period == "year":
+            scaled = df[col].dt.dayofyear / 365.25 * 2*np.pi
+            infix = "_year"
+        else:
+            raise RuntimeError(f"Periodic columns period info should be int, float, \"time\", \"year\", or {PERIODIC_COLUMN_PATTERN}. Found \"{period}\" instead.")
+        
+        df[col + infix + '_sin'] = np.sin(scaled)
+        df[col + infix + '_cos'] = np.cos(scaled)
+
+    df.drop(list(set(col for col, _ in periodic_columns)), inplace=True, axis=1)
     
     return df[features]
 
@@ -312,7 +338,8 @@ def get_train_generator_and_val_set(
     impute_columns: List[str],
     log_scale_columns: List[str],
     mmc_encoding_columns: List[str],
-    time_column: str,
+    periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]]
+
 ) -> Tuple[Generator[Tuple[pd.DataFrame, pd.DataFrame], None, None], pd.DataFrame]:
     """Return the generator function for tensorflow"""
     # Train Generator
@@ -320,11 +347,11 @@ def get_train_generator_and_val_set(
     kwargs = {
         "features": features,
         "id_columns": id_columns,
-        "drop_columns":drop_columns,
+        "drop_columns": drop_columns,
         "impute_columns": impute_columns,
         "log_scale_columns": log_scale_columns,
         "mmc_encoding_columns": mmc_encoding_columns,
-        "time_column": time_column
+        "periodic_columns": periodic_columns
     }
 
     # Generate MMC mapping

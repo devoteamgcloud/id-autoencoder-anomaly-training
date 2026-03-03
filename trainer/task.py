@@ -46,7 +46,7 @@ def run_training_pipeline(args: argparse.Namespace):
         'impute_columns': args.impute_columns,
         'log_scale_columns': args.log_scale_columns,
         'mmc_encoding_columns': args.mmc_encoding_columns,
-        'time_column': args.time_column
+        'periodic_columns': args.periodic_columns
     }
     features, raw_features = get_features(**kwargs)
     generator, val_df = get_train_generator_and_val_set(features, **kwargs)
@@ -95,7 +95,8 @@ if __name__ == '__main__':
     parser.add_argument('--impute-columns', nargs='+', required=True, help='List of columns that need to be imputed with 0')
     parser.add_argument('--log-scale-columns', nargs='+', required=True, help='List of columns that need log normalization')
     parser.add_argument('--mmc-encoding-columns', nargs='+', required=True, help='List of high cardinality categorical columns that need to be encoded to mean, median, and count')
-    parser.add_argument('--time-column', type=str, required=True, help='Column that identifies transaction time')
+    parser.add_argument('--periodic-columns', nargs='+', required=True, help='List of periodic columns. Should be in format (COL_NAME PERIOD)+, where COL_NAME is the name of column, and PERIOD is either int, float, or string')
+
     
     # Training Hyperparams
     parser.add_argument('--learning-rate', type=float, default=0.001, help='Learning rate for the training process')
@@ -123,7 +124,14 @@ if __name__ == '__main__':
         args.temp_dataset = args.bq_training_data_path.split('.')[1]
         if not args.project_id:
             args.project_id = args.bq_training_data_path.split('.')[0]
+
     args.curr_date_str = datetime.now().strftime('%Y%m%d')
+
+    assert (len(args.periodic_columns) % 2) == 0, "Periodic columns args length should be even"
+    args.periodic_columns = [
+        (args.periodic_columns[i], args.periodic_columns[i+1])
+        for i in range(0, len(args.periodic_columns), 2)
+    ]
 
 
     # Create Paths

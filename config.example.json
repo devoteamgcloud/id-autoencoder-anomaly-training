@@ -12,7 +12,7 @@
     "impute-columns": [],
     "log-scale-columns": [],
     "mmc-encoding-columns": [],
-    "time-column": "",
+    "periodic-columns": [],
     "learning-rate": 0.001,
     "n-hidden": 3,
     "latent-dim": 0.5,

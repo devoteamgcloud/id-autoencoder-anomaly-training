@@ -44,3 +44,13 @@ def valid_postfix(value):
     if not re.match(r'^_[a-zA-Z0-9]+$', value):
         raise argparse.ArgumentTypeError(f"postfix should only contain alphanumeric characters and start with an underscore. found {value}.")
     return value
+
+
+def validate_periodic_format(value: str):
+    if value.isnumeric():
+        return float(value)
+    if value in {"time", "year"}:
+        return value
+    if re.search(r'^\s*(-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?):(-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?)\s*$', value):
+        return value
+    raise argparse.ArgumentTypeError("format of period is invalid")

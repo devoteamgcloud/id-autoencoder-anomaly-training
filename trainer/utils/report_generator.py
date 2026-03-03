@@ -112,7 +112,7 @@ def generate_hyperparameters_report(
         'threshold': threshold
     }
 
-    with open(f"{config.MODEL_PATH}/hyperparameters.txt", "w") as f:
+    with open(f"{config.MODEL_PATH}/hyperparameters.json", "w") as f:
         f.write(json.dumps(hyperparams, indent=4))
     
 

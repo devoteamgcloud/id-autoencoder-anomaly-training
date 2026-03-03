@@ -145,7 +145,7 @@ if __name__ == '__main__':
         for i in range(0, len(args.periodic_columns), 2)
     ]
 
-    assert (len(args.ohe_columns % 2) == 0), "OHE columns args length should be even"
+    assert (len(args.ohe_columns) % 2) == 0, "OHE columns args length should be even"
     args.ohe_columns = [
         (args.ohe_columns[i], validator.validate_ohe_format(args.ohe_columns[i+1]))
         for i in range(0, len(args.ohe_columns), 2)

@@ -430,15 +430,13 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) ->Tuple[Dict[str,
             )
         except Exception as e:
                 logger.warning(f'Failed to load chunk: {e}')
-                
+
         # Value Count this chunk
         for col, _ in ohe_columns:
             for classname, cnt in df[col].value_counts().to_dict():
                 if classname not in col_class_cnt[col]:
                     col_class_cnt[col][classname] = 0
                 col_class_cnt[col][classname] += cnt
-        del df
-        gc.collect()
     
     # Only take top n, set the other class as 'other', and remove arbitrary class (class) to prevent colinearity
     dropped = {}

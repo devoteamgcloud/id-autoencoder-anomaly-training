@@ -27,4 +27,4 @@ PY
 
 echo "Running task.py with args: ${ARGS[*]}"
 
-python3 trainer/task.py "${ARGS[@]}"
+python3 -m trainer.task "${ARGS[@]}"

@@ -52,6 +52,7 @@ The system trains an autoencoder on normal transaction data from BigQuery and us
 - `log-scale-columns`: Columns requiring log normalization
 - `stat-encoding-columns`: High cardinality categorical columns for statistical encoding
 - `periodic-columns`: Columns with periodic topology
+- `ohe-columns`: Columns that will be applied one-hot encoding operation
 - `time-column`: Transaction timestamp column
 
 ### Model Hyperparameters

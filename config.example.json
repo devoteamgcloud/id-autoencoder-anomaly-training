@@ -13,6 +13,7 @@
     "log-scale-columns": [],
     "stat-encoding-columns": [],
     "periodic-columns": [],
+    "ohe-columns": [],
     "time-column": "",
     "learning-rate": 0.001,
     "n-hidden": 3,

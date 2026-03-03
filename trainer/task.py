@@ -9,7 +9,7 @@ from trainer.utils.data_loader import fetch_train_and_val, get_features, get_tra
 from trainer.utils.train import train_model, find_threshold
 from trainer.utils.persistence import save_model_and_reports
 from trainer.utils.report_generator import generate_training_report, generate_threshold_report, generate_hyperparameters_report
-from trainer.args_validator import int_or_float, valid_bq_path, valid_datetime, valid_postfix
+from trainer.args_validator import int_or_float, valid_bq_path, valid_datetime, valid_postfix, validate_periodic_format
 
 # Logging Configuration
 logging.basicConfig(
@@ -116,6 +116,7 @@ if __name__ == '__main__':
 
     # Misc
     parser.add_argument('--get-new-data', type=bool, default=True, help='Whether to get new data from BigQuery or use existing local parquet files')
+    parser.add_argument("--dont-get-new-data", action="store_false", dest="get_new_data")
     
     args = parser.parse_args()
 
@@ -130,7 +131,7 @@ if __name__ == '__main__':
 
     assert (len(args.periodic_columns) % 2) == 0, "Periodic columns args length should be even"
     args.periodic_columns = [
-        (args.periodic_columns[i], args.periodic_columns[i+1])
+        (args.periodic_columns[i], validate_periodic_format(args.periodic_columns[i+1]))
         for i in range(0, len(args.periodic_columns), 2)
     ]
 

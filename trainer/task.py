@@ -101,12 +101,12 @@ if __name__ == '__main__':
 
     # Column Names
     parser.add_argument('--id-columns', nargs='+', required=True, help='List of identifier columns')
-    parser.add_argument('--drop-columns', nargs='+', required=True, help='List of columns that want to be dropped')
-    parser.add_argument('--impute-columns', nargs='+', required=True, help='List of columns that need to be imputed with 0')
-    parser.add_argument('--log-scale-columns', nargs='+', required=True, help='List of columns that need log normalization')
-    parser.add_argument('--stat-encoding-columns', nargs='+', required=True, help='List of high cardinality categorical columns that need to be encoded to its general statistics')
-    parser.add_argument('--periodic-columns', nargs='+', required=True, help='List of periodic columns. Should be in format (COL_NAME PERIOD)+, where COL_NAME is the name of column, and PERIOD is either int, float, or string')
-    parser.add_argument('--ohe-columns', nargs='+', required=True, help='List of columns that will be one hot encoded. Should be in format (COL_NAME N)+, where COL_NAME is the name of column, and N is the top-n class allowed, set to 0 to use all')
+    parser.add_argument('--drop-columns', nargs='*', required=True, help='List of columns that want to be dropped')
+    parser.add_argument('--impute-columns', nargs='*', required=True, help='List of columns that need to be imputed with 0')
+    parser.add_argument('--log-scale-columns', nargs='*', required=True, help='List of columns that need log normalization')
+    parser.add_argument('--stat-encoding-columns', nargs='*', required=True, help='List of high cardinality categorical columns that need to be encoded to its general statistics')
+    parser.add_argument('--periodic-columns', nargs='*', required=True, help='List of periodic columns. Should be in format (COL_NAME PERIOD)+, where COL_NAME is the name of column, and PERIOD is either int, float, or string')
+    parser.add_argument('--ohe-columns', nargs='*', required=True, help='List of columns that will be one hot encoded. Should be in format (COL_NAME N)+, where COL_NAME is the name of column, and N is the top-n class allowed, set to 0 to use all')
     parser.add_argument('--time-column', type=str, required=True, help='Time column used for date filtering')
 
     

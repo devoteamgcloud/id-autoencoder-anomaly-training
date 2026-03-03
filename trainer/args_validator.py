@@ -46,6 +46,13 @@ def valid_postfix(value):
     return value
 
 
+def valid_get_new_data(value: str):
+    value = value.lower()
+    if value == 'true':
+        return True
+    return False
+
+
 def validate_periodic_format(value: str):
     if value.isnumeric():
         return float(value)

@@ -9,7 +9,7 @@ from trainer.utils.data_loader import fetch_train_and_val, get_features, get_tra
 from trainer.utils.train import train_model, find_threshold
 from trainer.utils.persistence import save_model_and_reports
 from trainer.utils.report_generator import generate_training_report, generate_threshold_report, generate_hyperparameters_report
-from trainer.args_validator import int_or_float, valid_bq_path, valid_datetime, valid_postfix, validate_periodic_format
+import trainer.args_validator as validator
 
 # Logging Configuration
 logging.basicConfig(
@@ -78,11 +78,11 @@ if __name__ == '__main__':
 
     # Paths
     parser.add_argument('--gcs-path', type=str, required=True, help='Destination GCS path for model training results, temporary data dump, and evaluation')
-    parser.add_argument('--bq-training-data-path', type=valid_bq_path, required=True, help='ML Training source table path in BigQuery')
-    parser.add_argument('--bq-report-path', type=valid_bq_path, required=True, help='BigQuery table path for saving training report and metadata')
+    parser.add_argument('--bq-training-data-path', type=validator.valid_bq_path, required=True, help='ML Training source table path in BigQuery')
+    parser.add_argument('--bq-report-path', type=validator.valid_bq_path, required=True, help='BigQuery table path for saving training report and metadata')
 
     # Data date range
-    parser.add_argument('--end-train-date', type=valid_datetime, default='', help='Ending date filter for the training data in the format of YYYY-MM-DD')
+    parser.add_argument('--end-train-date', type=validator.valid_datetime, default='', help='Ending date filter for the training data in the format of YYYY-MM-DD')
     parser.add_argument('--start-train-interval', type=int, default=90, help='Starting date filter for the training data in the form of how many days before the end date')
     parser.add_argument('--validation-interval', type=int, default=1, help='Number of days taken (from most recent data) for validation dataset')
 
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     # Training Hyperparams
     parser.add_argument('--learning-rate', type=float, default=0.001, help='Learning rate for the training process')
     parser.add_argument('--n-hidden', type=int, default=3, help='Number of hidden layers between (exclusive): (1) input layer and latent space layer, (2) latent space layer and output layer')
-    parser.add_argument('--latent-dim', type=int_or_float, default=0.5, help='Dimension of latent space. If float between (0,1), it will set the dimension to d*input_dim. If int, it will set the dimension to the set value')
+    parser.add_argument('--latent-dim', type=validator.int_or_float, default=0.5, help='Dimension of latent space. If float between (0,1), it will set the dimension to d*input_dim. If int, it will set the dimension to the set value')
     parser.add_argument('--activation', type=str, default='relu', help='Type of activation function used in hidden layers')
     parser.add_argument('--quantile-threshold', type=float, default=0.95, help='Quantile threshold for determining anomaly based on reconstruction error distribution')
 
@@ -112,12 +112,10 @@ if __name__ == '__main__':
 
     # Model metadata
     parser.add_argument('--model-name', type=str, default='autoencoder', help='Name of the model to be saved')
-    parser.add_argument('--postfix', type=valid_postfix, default='', help='Additional string to be appended to the model name and report name for better identification')
+    parser.add_argument('--postfix', type=validator.valid_postfix, default='', help='Additional string to be appended to the model name and report name for better identification')
 
     # Misc
-    parser.add_argument('--get-new-data', action="store_true", dest="get_new_data")
-    parser.add_argument("--dont-get-new-data", action="store_false", dest="get_new_data")
-    parser.set_defaults(get_new_data=True)
+    parser.add_argument('--get-new-data', type=validator.valid_get_new_data, default=True, help='Whether to get new data from BigQuery or use existing local parquet files')
     
     args = parser.parse_args()
 
@@ -132,7 +130,7 @@ if __name__ == '__main__':
 
     assert (len(args.periodic_columns) % 2) == 0, "Periodic columns args length should be even"
     args.periodic_columns = [
-        (args.periodic_columns[i], validate_periodic_format(args.periodic_columns[i+1]))
+        (args.periodic_columns[i], validator.validate_periodic_format(args.periodic_columns[i+1]))
         for i in range(0, len(args.periodic_columns), 2)
     ]
 

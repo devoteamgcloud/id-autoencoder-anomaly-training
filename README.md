@@ -66,8 +66,7 @@ The system trains an autoencoder on normal transaction data from BigQuery and us
 ### Output Configuration
 - `model-name`: Saved model name (default: 'autoencoder')
 - `postfix`: Additional identifier for model and reports
-- `get-new-data`: Whether to fetch fresh data from BigQuery (default: true)
-- `-dont-get-new-data`: if set, it will turn `get-new-data` to false. For development only.
+- `get-new-data`: Whether to fetch fresh data from BigQuery (default: true). set to other than "true" to set it to false.
 
 ## Requirements
 

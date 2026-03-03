@@ -10,4 +10,3 @@ dist
 # Configurations
 config.json
 jobspec.json
-run.sh

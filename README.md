@@ -51,6 +51,7 @@ The system trains an autoencoder on normal transaction data from BigQuery and us
 - `impute-columns`: Columns to impute with 0
 - `log-scale-columns`: Columns requiring log normalization
 - `mmc-encoding-columns`: High cardinality categorical columns for mean/median/count encoding
+- `periodic-columns`: Columns with periodic topology
 - `time-column`: Transaction timestamp column
 
 ### Model Hyperparameters
@@ -66,6 +67,7 @@ The system trains an autoencoder on normal transaction data from BigQuery and us
 - `model-name`: Saved model name (default: 'autoencoder')
 - `postfix`: Additional identifier for model and reports
 - `get-new-data`: Whether to fetch fresh data from BigQuery (default: true)
+- `-dont-get-new-data`: if set, it will turn `get-new-data` to false. For development only.
 
 ## Requirements
 

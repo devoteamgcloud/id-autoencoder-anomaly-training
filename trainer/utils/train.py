@@ -109,10 +109,9 @@ def train_model(
 
     logger.info("Starting training...")
     try:
-        val_data = None if val is None else val.batch(args.batch_size)
         history = autoencoder.fit(
             train,
-            validation_data=val_data,
+            validation_data=val,
             epochs=args.epochs,
             batch_size=args.batch_size,
             callbacks=callbacks,

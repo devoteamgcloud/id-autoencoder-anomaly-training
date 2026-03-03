@@ -410,7 +410,7 @@ def create_tf_dataset(
     train_dataset = train_dataset.prefetch(tf.data.AUTOTUNE)
 
     if len(val_df) > 0:
-        val_dataset = tf.data.Dataset.from_tensor_slices(val_df)
+        val_dataset = tf.data.Dataset.from_tensor_slices(val_df).batch()
     else:
         val_dataset = None
     

@@ -115,8 +115,9 @@ if __name__ == '__main__':
     parser.add_argument('--postfix', type=valid_postfix, default='', help='Additional string to be appended to the model name and report name for better identification')
 
     # Misc
-    parser.add_argument('--get-new-data', type=bool, default=True, help='Whether to get new data from BigQuery or use existing local parquet files')
+    parser.add_argument('--get-new-data', action="store_true", dest="get_new_data")
     parser.add_argument("--dont-get-new-data", action="store_false", dest="get_new_data")
+    parser.set_defaults(get_new_data=True)
     
     args = parser.parse_args()
 

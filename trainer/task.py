@@ -5,7 +5,7 @@ import logging
 import os
 
 import trainer.config as config
-from trainer.utils.data_loader import fetch_train_and_val, get_features, get_train_generator_and_val_set, create_tf_dataset
+from trainer.utils.data_loader import fetch_train_and_val, get_precomputed_data, get_features, get_train_generator_and_val_set, create_tf_dataset
 from trainer.utils.train import train_model, find_threshold
 from trainer.utils.persistence import save_model_and_reports
 from trainer.utils.report_generator import generate_training_report, generate_threshold_report, generate_hyperparameters_report
@@ -46,9 +46,19 @@ def run_training_pipeline(args: argparse.Namespace):
         'impute_columns': args.impute_columns,
         'log_scale_columns': args.log_scale_columns,
         'stat_encoding_columns': args.stat_encoding_columns,
-        'periodic_columns': args.periodic_columns
+        'periodic_columns': args.periodic_columns,
+        'ohe_columns': args.ohe_columns
     }
+
+    # Precompute several data before running
+    stat_mapping, ohe_class_names, ohe_dropped_class_names = get_precomputed_data(args.stat_encoding_columns, args.ohe_columns)
+    kwargs['ohe_class_names'] = ohe_class_names
+
+    # Create dataset object
     features, raw_features = get_features(**kwargs)
+
+    kwargs['stat_mapping'] = stat_mapping
+    kwargs['ohe_dropped_class_names'] = ohe_dropped_class_names
     generator, val_df = get_train_generator_and_val_set(features, **kwargs)
     train, val = create_tf_dataset(generator, val_df, features, args.batch_size)
 
@@ -96,6 +106,7 @@ if __name__ == '__main__':
     parser.add_argument('--log-scale-columns', nargs='+', required=True, help='List of columns that need log normalization')
     parser.add_argument('--stat-encoding-columns', nargs='+', required=True, help='List of high cardinality categorical columns that need to be encoded to its general statistics')
     parser.add_argument('--periodic-columns', nargs='+', required=True, help='List of periodic columns. Should be in format (COL_NAME PERIOD)+, where COL_NAME is the name of column, and PERIOD is either int, float, or string')
+    parser.add_argument('--ohe-columns', nargs='+', required=True, help='List of columns that will be one hot encoded. Should be in format (COL_NAME N)+, where COL_NAME is the name of column, and N is the top-n class allowed, set to 0 to use all')
     parser.add_argument('--time-column', type=str, required=True, help='Time column used for date filtering')
 
     
@@ -134,6 +145,11 @@ if __name__ == '__main__':
         for i in range(0, len(args.periodic_columns), 2)
     ]
 
+    assert (len(args.ohe_columns % 2) == 0), "OHE columns args length should be even"
+    args.ohe_columns = [
+        (args.ohe_columns[i], validator.validate_ohe_format(args.ohe_columns[i+1]))
+        for i in range(0, len(args.ohe_columns), 2)
+    ]
 
     # Create Paths
     if not os.path.exists(config.TRAIN_PATH):

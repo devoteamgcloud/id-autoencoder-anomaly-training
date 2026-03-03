@@ -64,17 +64,17 @@ def save_model_and_reports(
     except Exception as e:
         logger.error(f"Failed to save threshold report: {e}")
 
-    # Save stat encoding mapping
+    # Save precomputed data
     try:
         # Save for historical reference
-        blob = bucket.blob(f"reports/autoencoder/{args.curr_date_str}{args.postfix}/stat_mapping.json")
-        blob.upload_from_filename(f"{config.MODEL_PATH}/stat_mapping.json")
+        blob = bucket.blob(f"reports/autoencoder/{args.curr_date_str}{args.postfix}/precomputed.json")
+        blob.upload_from_filename(f"{config.MODEL_PATH}/precomputed.json")
 
         # Save for latest reference (overwrites previous)
-        blob = bucket.blob(f"reports/autoencoder/00000000{args.postfix}/stat_mapping.json")
-        blob.upload_from_filename(f"{config.MODEL_PATH}/stat_mapping.json")
+        blob = bucket.blob(f"reports/autoencoder/00000000{args.postfix}/precomputed.json")
+        blob.upload_from_filename(f"{config.MODEL_PATH}/precomputed.json")
 
-        logger.info(f"Stat encoding mapping saved to {args.gcs_path}/reports/autoencoder/{args.curr_date_str}{args.postfix}/stat_mapping.json")
+        logger.info(f"Stat encoding mapping saved to {args.gcs_path}/reports/autoencoder/{args.curr_date_str}{args.postfix}/precomputed.json")
     except Exception as e:
         logger.error(f"Failed to save stat encoding mapping: {e}")
 

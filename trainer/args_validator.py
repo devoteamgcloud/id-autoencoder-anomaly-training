@@ -61,3 +61,12 @@ def validate_periodic_format(value: str):
     if re.search(r'^\s*(-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?):(-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?)\s*$', value):
         return value
     raise argparse.ArgumentTypeError("format of period is invalid")
+
+
+def validate_ohe_format(value: str):
+    if value.isnumeric():
+        value = int(value)
+        if value < 0:
+            raise argparse.ArgumentTypeError("OHE max class count (N) should be positive")
+        return value
+    raise argparse.ArgumentTypeError("OHE max class count (N) should be a valid integer")

@@ -6,6 +6,7 @@ import logging
 import gc
 import json
 import re
+from uuid import uuid4
 
 from google.cloud import bigquery, storage
 import numpy as np
@@ -168,13 +169,40 @@ def fetch_train_and_val(args):
             )
 
 
+def get_precomputed_data(
+        stat_encoding_columns: List[str],
+        ohe_columns: List[Tuple[str, int]]
+    ):
+
+    # Generate stat encoding mapping
+    stat_mapping = create_stat_mapping(stat_encoding_columns)
+
+    # Generate OHE class names
+    ohe_class_names, ohe_dropped_class_names = create_ohe_class_names(ohe_columns)
+
+    # Save data
+    # Save the stat mapping to a local JSON file for later us in persistence.py
+    precomputed_path = f"{config.MODEL_PATH}/precomputed.json"
+    with open(precomputed_path, 'w') as f:
+        precomputed_data = {
+            'stat_mapping': stat_mapping,
+            'ohe_class_names': ohe_class_names,
+            'ohe_dropped_class_names': ohe_dropped_class_names
+        }
+        json.dump(precomputed_data, f, indent=4)
+
+    return stat_mapping, ohe_class_names, ohe_dropped_class_names
+
+
 def get_features(
     id_columns: List[str],
     drop_columns: List[str],
     impute_columns: List[str],
     log_scale_columns: List[str],
     stat_encoding_columns: List[str],
-    periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]]
+    periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]],
+    ohe_columns: List[Tuple[str, int]],
+    ohe_class_names: Dict[str, List[str]]
 ) -> List[str]:
     """
     Get the features of the training data as a list of strings of feature names
@@ -209,6 +237,11 @@ def get_features(
         elif period == "year":
             infix = "_year"
         features += [col + infix + "_sin", col + infix + "_cos"]
+    for col in ohe_columns:  # OHE columns
+        features += [
+            f'ohe-{col}-{name}'
+            for name in ohe_class_names[col]
+        ]
 
     # Free memory
     del df
@@ -226,7 +259,13 @@ def preprocess(
     log_scale_columns: List[str],
     stat_encoding_columns: List[str],
     periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]],
-    stat_mapping: Dict[str, Dict[str, Dict[str, float]]]
+    ohe_columns: List[Tuple[str, int]],
+
+    # Precomputed data
+    stat_mapping: Dict[str, Dict[str, Dict[str, float]]],
+    ohe_class_names: Dict[str, List[str]],
+    ohe_dropped_class_names: Dict[str, str]
+
 ) -> pd.DataFrame:      
     """Preprocess the dataframe into all-numeric and normalized values"""
     # Drop ID columns
@@ -237,7 +276,6 @@ def preprocess(
 
     # Fill NA
     df.fillna(value=0.0, inplace=True)
-
 
     # Perform stat encoding
     for col in stat_encoding_columns:
@@ -274,6 +312,21 @@ def preprocess(
         df[col + infix + '_cos'] = np.cos(scaled)
 
     df.drop(list(set(col for col, _ in periodic_columns)), inplace=True, axis=1)
+
+    # Perform One-Hot Encoding
+    for col, _ in ohe_columns:
+        dropped_class = ohe_dropped_class_names[col]
+        
+        if dropped_class == '':
+            # Convert everything else outside top-n to "default" class
+            dropped_class = str(uuid4())
+            lst = df[col].where(df[col].isin(set(ohe_class_names[col])), dropped_class)
+        else:
+            lst = df[col]
+
+        df_ohe = pd.get_dummies(lst, prefix=f'ohe-{col}', prefix_sep='-')
+        df_ohe.drop([f'ohe-{col}-{dropped_class}'], axis=1, inplace=True)
+        df[list(df_ohe)] = df_ohe
     
     return df[features]
 
@@ -359,6 +412,41 @@ def create_stat_mapping(stat_encoding_columns: List[str]) -> Dict[str, Dict[str,
     
     return stat_mapping
 
+def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) ->Tuple[Dict[str, List[str]], Dict[str, str]]:
+    """Create the class names for ohe columns"""
+
+    col_class_cnt = {col: {} for col, _ in ohe_columns}
+
+    # Count the class count for every chunk
+    for filename in os.listdir(config.TRAIN_PATH):
+        # Load chunk
+        df = pd.read_parquet(
+            f'{config.TRAIN_PATH}/{filename}',
+            columns=[col for col, _ in ohe_columns]
+        )
+        # Value Count this chunk
+        for col, _ in ohe_columns:
+            for classname, cnt in df[col].value_counts().to_dict():
+                if classname not in col_class_cnt[col]:
+                    col_class_cnt[col][classname] = 0
+                col_class_cnt[col][classname] += cnt
+        del df
+        gc.collect()
+    
+    # Only take top n, set the other class as 'other', and remove arbitrary class (class) to prevent colinearity
+    dropped = {}
+    for col, top_n in ohe_columns:
+        lst = sorted(col_class_cnt[col].items(), key=lambda t: t[1], reverse=True)
+
+        if len(lst) > top_n:
+            dropped_class_name = ''
+        else:
+            dropped_class_name, _ = lst.pop()
+        dropped[col] = dropped_class_name
+        col_class_cnt[col] = lst[:top_n]
+
+    return col_class_cnt, dropped
+
 
 def get_train_generator_and_val_set(
     features: List[str],
@@ -367,7 +455,13 @@ def get_train_generator_and_val_set(
     impute_columns: List[str],
     log_scale_columns: List[str],
     stat_encoding_columns: List[str],
-    periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]]
+    periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]],
+    ohe_columns: List[Tuple[str, int]],
+
+    # Precomputed columns
+    stat_mapping: Dict[str, Dict[str, Dict[str, float]]],
+    ohe_class_names: Dict[str, List[str]],
+    ohe_dropped_class_names: Dict[str, str]
 
 ) -> Tuple[Generator[Tuple[pd.DataFrame, pd.DataFrame], None, None], pd.DataFrame]:
     """Return the generator function for tensorflow"""
@@ -380,18 +474,12 @@ def get_train_generator_and_val_set(
         "impute_columns": impute_columns,
         "log_scale_columns": log_scale_columns,
         "stat_encoding_columns": stat_encoding_columns,
-        "periodic_columns": periodic_columns
-    }
-
-    # Generate stat encoding mapping
-    stat_mapping = create_stat_mapping(stat_encoding_columns)
-    kwargs['stat_mapping'] = stat_mapping
-
-    # Save the stat mapping to a local JSON file for later us in persistence.py
-    stat_mapping_path = f"{config.MODEL_PATH}/stat_mapping.json"
-    with open(stat_mapping_path, 'w') as f:
-        json.dump(stat_mapping, f, indent=4)
-             
+        "periodic_columns": periodic_columns,
+        "ohe_columns": ohe_columns,
+        'stat_mapping': stat_mapping,
+        'ohe_class_names': ohe_class_names,
+        'ohe_dropped_class_names': ohe_dropped_class_names
+    }        
 
     def _generator():
         filenames = os.listdir(config.TRAIN_PATH)
@@ -415,6 +503,7 @@ def get_train_generator_and_val_set(
         pd.read_parquet(f'{config.VAL_PATH}/'),
         **kwargs
     )
+    
     return _generator, val_df
 
 

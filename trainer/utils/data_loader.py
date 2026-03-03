@@ -494,10 +494,13 @@ def get_train_generator_and_val_set(
             gc.collect()
 
             # Preprocess data
-            df = preprocess(
-                df=pd.read_parquet(f'{config.TRAIN_PATH}/{filename}'),
-                **kwargs
-            )
+            try:
+                df = preprocess(
+                    df=pd.read_parquet(f'{config.TRAIN_PATH}/{filename}'),
+                    **kwargs
+                )
+            except Exception as e:
+                logger.warning(f'Failed to load chunk: {e}')
             df = df.astype(np.float32)
             yield df, df  # Return twice for autoencoder architecture
             del df

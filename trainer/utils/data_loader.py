@@ -345,7 +345,7 @@ def create_stat_mapping(stat_encoding_columns: List[str]) -> Dict[str, Dict[str,
             for k in quantile_mapping:
                 result = float(np.log10(quantile_mapping[k].percentile(i) + 1))
                 if np.isnan(result):
-                    result = min_mapping + (max_mapping[k] - min_mapping[k]) * i/100
+                    result = min_mapping[k] + (max_mapping[k] - min_mapping[k]) * i/100
                 final_quantile[f'q{i}'][k] = np.log10(result+1)
         
 

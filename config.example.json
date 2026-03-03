@@ -11,7 +11,7 @@
     "drop-columns": [],
     "impute-columns": [],
     "log-scale-columns": [],
-    "mmc-encoding-columns": [],
+    "stat-encoding-columns": [],
     "periodic-columns": [],
     "time-column": "",
     "learning-rate": 0.001,

@@ -124,7 +124,7 @@ def generate_hyperparameters_report(
         'drop-columns': args.drop_columns,
         'impute-columns': args.impute_columns,
         'log-scale-columns': args.log_scale_columns,
-        'mmc-encoding-columns': args.mmc_encoding_columns,
+        'stat-encoding-columns': args.stat_encoding_columns,
         'time-column': args.time_column,
         'taken-group': args.taken_group
     }

@@ -173,7 +173,7 @@ def get_features(
     drop_columns: List[str],
     impute_columns: List[str],
     log_scale_columns: List[str],
-    mmc_encoding_columns: List[str],
+    stat_encoding_columns: List[str],
     periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]]
 ) -> List[str]:
     """
@@ -191,13 +191,17 @@ def get_features(
     # Dropped Columns
     features -= set(id_columns)
     features -= set(drop_columns)
-    features -= set(mmc_encoding_columns)
+    features -= set(stat_encoding_columns)
     features -= set(col for col, _ in periodic_columns)
 
     # New Columns
     features = list(features)
-    for col in mmc_encoding_columns:  # MMC Encoding
-        features += [f'cat-{col}-mean', f'cat-{col}-median', f'cat-{col}-count']
+    for col in stat_encoding_columns:  # Stat Encoding
+        features += [
+            f'cat-{col}-{feat}'
+            for feat in
+            ['mean', 'count', 'min', 'max', *[f'q{i}' for i in range(10,91,10)]]
+        ]
     for col, period in periodic_columns:  # Periodic columns
         infix = ""
         if period == "time":
@@ -220,9 +224,9 @@ def preprocess(
     drop_columns: List[str],
     impute_columns: List[str],
     log_scale_columns: List[str],
-    mmc_encoding_columns: List[str],
+    stat_encoding_columns: List[str],
     periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]],
-    mmc_mapping: Dict[str, Dict[str, Dict[str, float]]]
+    stat_mapping: Dict[str, Dict[str, Dict[str, float]]]
 ) -> pd.DataFrame:      
     """Preprocess the dataframe into all-numeric and normalized values"""
     # Drop ID columns
@@ -234,12 +238,12 @@ def preprocess(
     # Fill NA
     df.fillna(value=0.0, inplace=True)
 
-    # Perform Mean - Median - Count encoding
-    for col in mmc_encoding_columns:
-        df[f'cat-{col}-mean'] = df[col].map(mmc_mapping[col]['mean']).fillna(0.0)
-        df[f'cat-{col}-median'] = df[col].map(mmc_mapping[col]['median']).fillna(0.0)
-        df[f'cat-{col}-count'] = df[col].map(mmc_mapping[col]['count']).fillna(0.0)
-    df.drop(mmc_encoding_columns, inplace=True, axis=1)
+
+    # Perform stat encoding
+    for col in stat_encoding_columns:
+        for feat in ['mean', 'count', 'min', 'max', *[f'q{i}' for i in range(10,91,10)]]:
+            df[f'cat-{col}-{feat}'] = df[col].map(stat_mapping[col][feat]).fillna(0.0)
+    df.drop(stat_encoding_columns, inplace=True, axis=1)
 
     # Perform Log Scaling
     df[log_scale_columns] = np.log10(df[log_scale_columns]+1)
@@ -274,14 +278,18 @@ def preprocess(
     return df[features]
 
 
-def create_mmc_mapping(mmc_encoding_columns: List[str]) -> Dict[str, Dict[str, Dict[str, float]]]:
-    """Create the mapping for mean, median, and count encoding for each column in mmc_encoding_columns"""
-    mmc_mapping = {}
+def create_stat_mapping(stat_encoding_columns: List[str]) -> Dict[str, Dict[str, Dict[str, float]]]:
+    """Create the mapping for mean, median, and count encoding for each column in stat_encoding_columns"""
+    stat_mapping = {}
 
-    for col in mmc_encoding_columns:
+    for col in stat_encoding_columns:
         mean_mapping = {}
         count_mapping = {}
-        median_mapping = {}
+        min_mapping = {}
+        max_mapping = {}
+        quantile_mapping = {}
+
+        logger.info("Start computing statistics...")
 
         for filename in os.listdir(config.TRAIN_PATH):
             df = pd.read_parquet(
@@ -294,17 +302,21 @@ def create_mmc_mapping(mmc_encoding_columns: List[str]) -> Dict[str, Dict[str, D
             # sum and count (exact)
             amount_sum = grouped.sum()
             amount_count = grouped.count()
+            amount_min = grouped.min()
+            amount_max = grouped.max()
 
-            # update sum & count
+            # update sum, count, min, and max
             for key in amount_sum.index:
                 mean_mapping[key] = mean_mapping.get(key, 0.0) + amount_sum[key]
                 count_mapping[key] = count_mapping.get(key, 0) + amount_count[key]
+                min_mapping[key] = amount_min[key]
+                max_mapping[key] = amount_max[key]
 
-            # update median sketch
+            # update quantile sketch
             for key, values in grouped:
-                if key not in median_mapping:
-                    median_mapping[key] = TDigest()
-                median_mapping[key].batch_update(values.values)
+                if key not in quantile_mapping:
+                    quantile_mapping[key] = TDigest()
+                quantile_mapping[key].batch_update(values.values)
 
         # finalize statistics
         final_mean = {
@@ -317,18 +329,32 @@ def create_mmc_mapping(mmc_encoding_columns: List[str]) -> Dict[str, Dict[str, D
             for k in count_mapping
         }
 
-        final_median = {
-            k: float(np.log10(median_mapping[k].percentile(50) + 1))
-            for k in median_mapping
+        final_min = {
+            k: float(np.log10(min_mapping[k] + 1))
+            for k in min_mapping
         }
 
-        mmc_mapping[col] = {
+        final_max = {
+            k: float(np.log10(max_mapping[k] + 1))
+            for k in max_mapping
+        }
+
+        final_quantile = {
+            f'q{i}': {
+                k: float(np.log10(quantile_mapping[k].percentile(i) + 1))
+                for k in quantile_mapping
+            } for i in range(10,91,10)
+        }
+
+        stat_mapping[col] = {
             'mean': final_mean,
             'count': final_count,
-            'median': final_median
+            'min': final_min,
+            'max': final_max,
+            **final_quantile
         }
     
-    return mmc_mapping
+    return stat_mapping
 
 
 def get_train_generator_and_val_set(
@@ -337,7 +363,7 @@ def get_train_generator_and_val_set(
     drop_columns: List[str],
     impute_columns: List[str],
     log_scale_columns: List[str],
-    mmc_encoding_columns: List[str],
+    stat_encoding_columns: List[str],
     periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]]
 
 ) -> Tuple[Generator[Tuple[pd.DataFrame, pd.DataFrame], None, None], pd.DataFrame]:
@@ -350,18 +376,18 @@ def get_train_generator_and_val_set(
         "drop_columns": drop_columns,
         "impute_columns": impute_columns,
         "log_scale_columns": log_scale_columns,
-        "mmc_encoding_columns": mmc_encoding_columns,
+        "stat_encoding_columns": stat_encoding_columns,
         "periodic_columns": periodic_columns
     }
 
-    # Generate MMC mapping
-    mmc_mapping = create_mmc_mapping(mmc_encoding_columns)
-    kwargs['mmc_mapping'] = mmc_mapping
+    # Generate stat encoding mapping
+    stat_mapping = create_stat_mapping(stat_encoding_columns)
+    kwargs['stat_mapping'] = stat_mapping
 
-    # Save the MMC mapping to a local JSON file for later use in persistence.py
-    mmc_mapping_path = f"{config.MODEL_PATH}/mmc_mapping.json"
-    with open(mmc_mapping_path, 'w') as f:
-        json.dump(mmc_mapping, f, indent=4)
+    # Save the stat mapping to a local JSON file for later us in persistence.py
+    stat_mapping_path = f"{config.MODEL_PATH}/stat_mapping.json"
+    with open(stat_mapping_path, 'w') as f:
+        json.dump(stat_mapping, f, indent=4)
              
 
     def _generator():

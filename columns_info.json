@@ -109,7 +109,7 @@
         "cm_tx_count_7d",
         "sof_switch_count"
     ],
-    "mmc-encoding-columns": [
+    "stat-encoding-columns": [
         "sof_id"
     ],
     "time-column": "created_at",

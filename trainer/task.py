@@ -45,7 +45,7 @@ def run_training_pipeline(args: argparse.Namespace):
         'drop_columns': args.drop_columns,
         'impute_columns': args.impute_columns,
         'log_scale_columns': args.log_scale_columns,
-        'mmc_encoding_columns': args.mmc_encoding_columns,
+        'stat_encoding_columns': args.stat_encoding_columns,
         'periodic_columns': args.periodic_columns
     }
     features, raw_features = get_features(**kwargs)
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     parser.add_argument('--drop-columns', nargs='+', required=True, help='List of columns that want to be dropped')
     parser.add_argument('--impute-columns', nargs='+', required=True, help='List of columns that need to be imputed with 0')
     parser.add_argument('--log-scale-columns', nargs='+', required=True, help='List of columns that need log normalization')
-    parser.add_argument('--mmc-encoding-columns', nargs='+', required=True, help='List of high cardinality categorical columns that need to be encoded to mean, median, and count')
+    parser.add_argument('--stat-encoding-columns', nargs='+', required=True, help='List of high cardinality categorical columns that need to be encoded to its general statistics')
     parser.add_argument('--periodic-columns', nargs='+', required=True, help='List of periodic columns. Should be in format (COL_NAME PERIOD)+, where COL_NAME is the name of column, and PERIOD is either int, float, or string')
     parser.add_argument('--time-column', type=str, required=True, help='Time column used for date filtering')
 

@@ -64,19 +64,19 @@ def save_model_and_reports(
     except Exception as e:
         logger.error(f"Failed to save threshold report: {e}")
 
-    # Save MMC encoding mapping
+    # Save stat encoding mapping
     try:
         # Save for historical reference
-        blob = bucket.blob(f"reports/autoencoder/{args.curr_date_str}{args.postfix}/mmc_mapping.json")
-        blob.upload_from_filename(f"{config.MODEL_PATH}/mmc_mapping.json")
+        blob = bucket.blob(f"reports/autoencoder/{args.curr_date_str}{args.postfix}/stat_mapping.json")
+        blob.upload_from_filename(f"{config.MODEL_PATH}/stat_mapping.json")
 
         # Save for latest reference (overwrites previous)
-        blob = bucket.blob(f"reports/autoencoder/00000000{args.postfix}/mmc_mapping.json")
-        blob.upload_from_filename(f"{config.MODEL_PATH}/mmc_mapping.json")
+        blob = bucket.blob(f"reports/autoencoder/00000000{args.postfix}/stat_mapping.json")
+        blob.upload_from_filename(f"{config.MODEL_PATH}/stat_mapping.json")
 
-        logger.info(f"MMC encoding mapping saved to {args.gcs_path}/reports/autoencoder/{args.curr_date_str}{args.postfix}/mmc_mapping.json")
+        logger.info(f"Stat encoding mapping saved to {args.gcs_path}/reports/autoencoder/{args.curr_date_str}{args.postfix}/stat_mapping.json")
     except Exception as e:
-        logger.error(f"Failed to save MMC encoding mapping: {e}")
+        logger.error(f"Failed to save stat encoding mapping: {e}")
 
     # Save hyperparameters
     try:

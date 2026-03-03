@@ -50,7 +50,7 @@ The system trains an autoencoder on normal transaction data from BigQuery and us
 - `drop-columns`: Columns to exclude from training
 - `impute-columns`: Columns to impute with 0
 - `log-scale-columns`: Columns requiring log normalization
-- `mmc-encoding-columns`: High cardinality categorical columns for mean/median/count encoding
+- `stat-encoding-columns`: High cardinality categorical columns for statistical encoding
 - `periodic-columns`: Columns with periodic topology
 - `time-column`: Transaction timestamp column
 

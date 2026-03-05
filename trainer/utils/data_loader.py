@@ -416,7 +416,7 @@ def create_stat_mapping(stat_encoding_columns: List[str]) -> Dict[str, Dict[str,
     
     return stat_mapping
 
-def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) ->Tuple[Dict[str, List[str]], Dict[str, str]]:
+def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) -> Tuple[Dict[str, List[str]], Dict[str, str]]:
     """Create the class names for ohe columns"""
 
     col_class_cnt = {col: {} for col, _ in ohe_columns}
@@ -442,6 +442,7 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) ->Tuple[Dict[str,
     
     # Only take top n, set the other class as 'other', and remove arbitrary class (class) to prevent colinearity
     dropped = {}
+    ohe_classes = {}
     for col, top_n in ohe_columns:
         lst = sorted(col_class_cnt[col].items(), key=lambda t: t[1], reverse=True)
         lst = [tup[0] for tup in lst]
@@ -451,9 +452,9 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) ->Tuple[Dict[str,
         else:
             dropped_class_name = lst.pop()
         dropped[col] = dropped_class_name
-        col_class_cnt[col] = lst[:top_n]
+        ohe_classes[col] = lst[:top_n]
 
-    return col_class_cnt, dropped
+    return ohe_classes, dropped
 
 
 def get_train_generator_and_val_set(

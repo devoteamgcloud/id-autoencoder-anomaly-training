@@ -329,6 +329,7 @@ def preprocess(
         # Check whether all class already exist in df_ohe
         col_set = set(list(df_ohe.columns))
         for class_ in ohe_class_names[col]:
+            class_ = f'ohe-{col}-{class_}'
             if class_ in col_set:
                 continue
             # If class not exist, replace with zeroes

@@ -435,7 +435,7 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) ->Tuple[Dict[str,
 
         # Value Count this chunk
         for col, _ in ohe_columns:
-            for classname, cnt in df[col].value_counts().to_dict():
+            for classname, cnt in df[col].value_counts().to_dict().items():
                 if classname not in col_class_cnt[col]:
                     col_class_cnt[col][classname] = 0
                 col_class_cnt[col][classname] += cnt

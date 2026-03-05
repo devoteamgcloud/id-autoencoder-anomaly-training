@@ -325,8 +325,17 @@ def preprocess(
             lst = df[col]
 
         df_ohe = pd.get_dummies(lst, prefix=f'ohe-{col}', prefix_sep='-')
+
+        # Check whether all class already exist in df_ohe
+        col_set = set(list(df_ohe.columns))
+        for class_ in ohe_class_names[col]:
+            if class_ in col_set:
+                continue
+            # If class not exist, replace with zeroes
+            df_ohe[class_] = 0
+        # Drop one random column
         df_ohe.drop([f'ohe-{col}-{dropped_class}'], axis=1, inplace=True)
-        df[list(df_ohe)] = df_ohe
+        df[list(df_ohe.columns)] = df_ohe
     
     return df[features]
 

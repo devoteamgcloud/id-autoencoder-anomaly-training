@@ -339,10 +339,8 @@ def preprocess(
         df_ohe.drop([f'ohe-{col}-{dropped_class}'], axis=1, inplace=True)
         ohe_dfs.append(df_ohe)
     df_concat = pd.concat([df, *ohe_dfs], axis=1, ignore_index=True)
-    del df
-    df = df_concat
 
-    return df[features]
+    return df_concat[features]
 
 
 def create_stat_mapping(stat_encoding_columns: List[str]) -> Dict[str, Dict[str, Dict[str, float]]]:

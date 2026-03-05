@@ -266,7 +266,7 @@ def preprocess(
     ohe_class_names: Dict[str, List[str]],
     ohe_dropped_class_names: Dict[str, str]
 
-) -> pd.DataFrame:      
+) -> pd.DataFrame: 
     """Preprocess the dataframe into all-numeric and normalized values"""
     # Drop ID columns
     df.drop(id_columns, inplace=True, axis=1)

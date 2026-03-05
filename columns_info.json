@@ -1,37 +1,49 @@
 {
     "features": [
-        "c_amount_zscore_30d",
-        "dayofweek",
+        "m_tx_count_24h",
+        "is_success",
+        "c_tx_count_30m",
+        "m_decline_ratio_7d",
+        "c_amount_mean_30d",
+        "c_decline_ratio_7d",
+        "sof_switch_count",
+        "amount_vs_c_mean",
+        "c_amount_std_30d",
+        "m_amount_sum_2h",
+        "cm_tx_count_7d",
+        "m_tx_count_30m",
+        "is_night",
+        "is_decline",
+        "c_amount_sum_2h",
+        "duplicate_count",
         "c_tx_count_24h",
         "m_tx_count_2h",
-        "c_amount_mean_30d",
-        "cm_tx_count_7d",
         "m_amount_std_30d",
-        "sof_switch_count",
-        "hour",
-        "amount",
-        "m_amount_sum_2h",
-        "m_tx_count_30m",
-        "m_decline_ratio_7d",
-        "is_night",
-        "c_decline_ratio_7d",
+        "c_amount_zscore_30d",
         "amount_vs_m_mean",
-        "m_amount_mean_30d",
-        "m_tx_count_24h",
-        "duplicate_count",
-        "is_decline",
-        "c_tx_count_30m",
-        "is_success",
-        "amount_vs_c_mean",
-        "c_amount_sum_2h",
-        "c_tx_count_2h",
-        "c_amount_std_30d",
         "m_amount_zscore_30d",
+        "amount",
+        "c_tx_count_2h",
+        "m_amount_mean_30d",
         "cat-sof_id-mean",
-        "cat-sof_id-median",
         "cat-sof_id-count",
-        "created_at_sin",
-        "created_at_cos"
+        "cat-sof_id-min",
+        "cat-sof_id-max",
+        "cat-sof_id-q10",
+        "cat-sof_id-q20",
+        "cat-sof_id-q30",
+        "cat-sof_id-q40",
+        "cat-sof_id-q50",
+        "cat-sof_id-q60",
+        "cat-sof_id-q70",
+        "cat-sof_id-q80",
+        "cat-sof_id-q90",
+        "created_at_time_sin",
+        "created_at_time_cos",
+        "created_at_year_sin",
+        "created_at_year_cos",
+        "dayofweek_sin",
+        "dayofweek_cos"
     ],
     "raw_features": [
         "trx_id",
@@ -84,7 +96,8 @@
         "payment_code_entropy",
         "payment_code",
         "trx_id",
-        "is_aggregator_merchant"
+        "is_aggregator_merchant",
+        "hour"
     ],
     "impute-columns": [
         "c_amount_std_30d",
@@ -112,6 +125,21 @@
     "stat-encoding-columns": [
         "sof_id"
     ],
+    "periodic-columns": [
+        [
+            "created_at",
+            "time"
+        ],
+        [
+            "created_at",
+            "year"
+        ],
+        [
+            "dayofweek",
+            7.0
+        ]
+    ],
+    "ohe-columns": [],
     "time-column": "created_at",
     "taken-group": 0
 }

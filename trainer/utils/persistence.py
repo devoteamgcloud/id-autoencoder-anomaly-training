@@ -23,14 +23,14 @@ def save_model_and_reports(
     # Save model
     try:
         # Save for historical reference
-        blob = bucket.blob(f"models/autoencoder/{model_name}")
+        blob = bucket.blob(f"models/{args.model_name}/{model_name}")
         blob.upload_from_filename(f"{config.MODEL_PATH}/{model_name}")
 
         # Save for latest reference (overwrites previous)
-        blob = bucket.blob(f"models/autoencoder/{args.model_name}_00000000{args.postfix}.keras")
+        blob = bucket.blob(f"models/{args.model_name}/{args.model_name}_00000000{args.postfix}.keras")
         blob.upload_from_filename(f"{config.MODEL_PATH}/{model_name}")
 
-        logger.info(f"Model saved to {args.gcs_path}/models/autoencoder/{model_name}")
+        logger.info(f"Model saved to {args.gcs_path}/models/{args.model_name}/{model_name}")
     except Exception as e:
         logger.error(f"Failed to save model: {e}")
 
@@ -38,14 +38,14 @@ def save_model_and_reports(
     try:
         if history:
             # Save for historical reference
-            blob = bucket.blob(f"reports/autoencoder/{args.curr_date_str}{args.postfix}/loss.png")
+            blob = bucket.blob(f"reports/{args.model_name}/{args.curr_date_str}{args.postfix}/loss.png")
             blob.upload_from_filename(f"{config.MODEL_PATH}/loss.png")
 
             # Save for latest reference (overwrites previous)
-            blob = bucket.blob(f"reports/autoencoder/00000000{args.postfix}/loss.png")
+            blob = bucket.blob(f"reports/{args.model_name}/00000000{args.postfix}/loss.png")
             blob.upload_from_filename(f"{config.MODEL_PATH}/loss.png")
 
-            logger.info(f"Training report saved to {args.gcs_path}/reports/autoencoder/{args.curr_date_str}{args.postfix}/loss.png")
+            logger.info(f"Training report saved to {args.gcs_path}/reports/{args.model_name}/{args.curr_date_str}{args.postfix}/loss.png")
             
     except Exception as e:
         logger.error(f"Failed to save training report: {e}")
@@ -53,42 +53,42 @@ def save_model_and_reports(
     # Save threshold report
     try:
         # Save for historical reference
-        blob = bucket.blob(f"reports/autoencoder/{args.curr_date_str}{args.postfix}/error_distribution.png")
+        blob = bucket.blob(f"reports/{args.model_name}/{args.curr_date_str}{args.postfix}/error_distribution.png")
         blob.upload_from_filename(f"{config.MODEL_PATH}/error_distribution.png")
 
         # Save for latest reference (overwrites previous)
-        blob = bucket.blob(f"reports/autoencoder/00000000{args.postfix}/error_distribution.png")
+        blob = bucket.blob(f"reports/{args.model_name}/00000000{args.postfix}/error_distribution.png")
         blob.upload_from_filename(f"{config.MODEL_PATH}/error_distribution.png")
 
-        logger.info(f"Threshold report saved to {args.gcs_path}/reports/autoencoder/{args.curr_date_str}{args.postfix}/error_distribution.png")
+        logger.info(f"Threshold report saved to {args.gcs_path}/reports/{args.model_name}/{args.curr_date_str}{args.postfix}/error_distribution.png")
     except Exception as e:
         logger.error(f"Failed to save threshold report: {e}")
 
     # Save precomputed data
     try:
         # Save for historical reference
-        blob = bucket.blob(f"reports/autoencoder/{args.curr_date_str}{args.postfix}/precomputed.json")
+        blob = bucket.blob(f"reports/{args.model_name}/{args.curr_date_str}{args.postfix}/precomputed.json")
         blob.upload_from_filename(f"{config.MODEL_PATH}/precomputed.json")
 
         # Save for latest reference (overwrites previous)
-        blob = bucket.blob(f"reports/autoencoder/00000000{args.postfix}/precomputed.json")
+        blob = bucket.blob(f"reports/{args.model_name}/00000000{args.postfix}/precomputed.json")
         blob.upload_from_filename(f"{config.MODEL_PATH}/precomputed.json")
 
-        logger.info(f"Stat encoding mapping saved to {args.gcs_path}/reports/autoencoder/{args.curr_date_str}{args.postfix}/precomputed.json")
+        logger.info(f"Stat encoding mapping saved to {args.gcs_path}/reports/{args.model_name}/{args.curr_date_str}{args.postfix}/precomputed.json")
     except Exception as e:
         logger.error(f"Failed to save stat encoding mapping: {e}")
 
     # Save hyperparameters
     try:
         # Save for historical reference
-        blob = bucket.blob(f"reports/autoencoder/{args.curr_date_str}{args.postfix}/hyperparameters.json")
+        blob = bucket.blob(f"reports/{args.model_name}/{args.curr_date_str}{args.postfix}/hyperparameters.json")
         blob.upload_from_filename(f"{config.MODEL_PATH}/hyperparameters.json")
 
         # Save for latest reference (overwrites previous)
-        blob = bucket.blob(f"reports/autoencoder/00000000{args.postfix}/hyperparameters.json")
+        blob = bucket.blob(f"reports/{args.model_name}/00000000{args.postfix}/hyperparameters.json")
         blob.upload_from_filename(f"{config.MODEL_PATH}/hyperparameters.json")
 
-        logger.info(f"Hyperparameters saved to {args.gcs_path}/reports/autoencoder/{args.curr_date_str}{args.postfix}/hyperparameters.json")
+        logger.info(f"Hyperparameters saved to {args.gcs_path}/reports/{args.model_name}/{args.curr_date_str}{args.postfix}/hyperparameters.json")
 
     except Exception as e:
         logger.error(f"Failed to save hyperparameters: {e}")
@@ -97,14 +97,14 @@ def save_model_and_reports(
     # Specific for this model, save column info
     try:
         # Save for historical reference
-        blob = bucket.blob(f"reports/autoencoder/{args.curr_date_str}{args.postfix}/columns_info.json")
+        blob = bucket.blob(f"reports/{args.model_name}/{args.curr_date_str}{args.postfix}/columns_info.json")
         blob.upload_from_filename(f"{config.MODEL_PATH}/columns_info.json")
 
         # Save for latest reference (overwrites previous)
-        blob = bucket.blob(f"reports/autoencoder/00000000{args.postfix}/columns_info.json")
+        blob = bucket.blob(f"reports/{args.model_name}/00000000{args.postfix}/columns_info.json")
         blob.upload_from_filename(f"{config.MODEL_PATH}/columns_info.json")
 
-        logger.info(f"Columns info saved to {args.gcs_path}/reports/autoencoder/{args.curr_date_str}{args.postfix}/columns_info.json")
+        logger.info(f"Columns info saved to {args.gcs_path}/reports/{args.model_name}/{args.curr_date_str}{args.postfix}/columns_info.json")
 
     except Exception as e:
         logger.error(f"Failed to save columns info: {e}")

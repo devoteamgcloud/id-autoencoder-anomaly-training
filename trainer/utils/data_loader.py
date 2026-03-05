@@ -237,7 +237,7 @@ def get_features(
         elif period == "year":
             infix = "_year"
         features += [col + infix + "_sin", col + infix + "_cos"]
-    for col in ohe_columns:  # OHE columns
+    for col, _ in ohe_columns:  # OHE columns
         features += [
             f'ohe-{col}-{name}'
             for name in ohe_class_names[col]

@@ -444,6 +444,7 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) ->Tuple[Dict[str,
     dropped = {}
     for col, top_n in ohe_columns:
         lst = sorted(col_class_cnt[col].items(), key=lambda t: t[1], reverse=True)
+        lst = [tup[0] for tup in lst]
 
         if len(lst) > top_n:
             dropped_class_name = ''

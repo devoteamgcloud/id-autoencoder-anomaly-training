@@ -449,7 +449,7 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) ->Tuple[Dict[str,
         if len(lst) > top_n:
             dropped_class_name = ''
         else:
-            dropped_class_name, _ = lst.pop()
+            dropped_class_name = lst.pop()
         dropped[col] = dropped_class_name
         col_class_cnt[col] = lst[:top_n]
 

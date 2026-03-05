@@ -314,6 +314,7 @@ def preprocess(
     df.drop(list(set(col for col, _ in periodic_columns)), inplace=True, axis=1)
 
     # Perform One-Hot Encoding
+    ohe_dfs = []
     for col, _ in ohe_columns:
         dropped_class = ohe_dropped_class_names[col]
         
@@ -336,8 +337,11 @@ def preprocess(
             df_ohe[class_] = 0
         # Drop one random column
         df_ohe.drop([f'ohe-{col}-{dropped_class}'], axis=1, inplace=True)
-        df[list(df_ohe.columns)] = df_ohe
-    
+        ohe_dfs.append(df_ohe)
+    df_concat = pd.concat([df, *ohe_dfs], axis=1, ignore_index=True)
+    del df
+    df = df_concat
+
     return df[features]
 
 

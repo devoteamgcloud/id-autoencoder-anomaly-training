@@ -151,7 +151,7 @@ def train_model(
             epochs=args.epochs,
             batch_size=args.batch_size,
             callbacks=callbacks,
-            verbose=1
+            verbose=0
         )
         logger.info("Training completed!")
     except Exception as e:

@@ -59,9 +59,10 @@ def create_autoencoder(
     weights: Dict[str, float] = {}
     # Regular layer
     ndim = feature_slices[0].stop - feature_slices[0].start
+    weight_denom = ndim + len(feature_slices) - 1
     reg_layer = layers.Dense(ndim, activation='linear', name='output-0')(prev_layer)
     losses['output-0'] = 'mse'
-    weights['output-0'] = ndim
+    weights['output-0'] = ndim / weight_denom
 
     # OHE / Binary Layers
     bin_layers = []
@@ -75,7 +76,7 @@ def create_autoencoder(
             loss = 'categorical_crossentropy'
         bin_layers.append(layers.Dense(ndim, activation=activation, name=f'output-{i}')(prev_layer))
         losses[f'output-{i}'] = loss
-        weights[f'output-{i}'] = np.log(ndim+1)  # Normalize
+        weights[f'output-{i}'] = np.log(ndim+1) / weight_denom # Normalize
     
 
     output_layers = [reg_layer, *bin_layers]
@@ -165,15 +166,23 @@ def find_threshold(
         args: argparse.Namespace,
         autoencoder: keras.Model,
         train: tf.data.Dataset,
-        val_df: pd.DataFrame,
-        history: keras.callbacks.History
+        val_df: pd.DataFrame
     ) -> Tuple[float, np.ndarray, np.ndarray]:
+
+    # Function for reconcat separated dataframes
+    def reconcat(result: Dict[str, np.array]):
+        ordered = []
+        for i in range(len(result)):
+            ordered.append(result[f'output-{i}'])
+        concatenated = np.concatenate(ordered, axis=1)
+        return concatenated
+
     # Compute train error
     all_errors_train = []
     for batch in train:
-        # Unpack the batch, the data is in the form of (df, df)
+        # Unpack the batch, the data is in the form of (df, Dict[df])
         x_batch = batch[0]
-        reconstruction = autoencoder(x_batch, training=False)
+        reconstruction = reconcat(autoencoder(x_batch, training=False))
         loss = np.sqrt(np.mean(np.square(x_batch - reconstruction), axis=1))
         all_errors_train.append(loss)
     all_errors_train = np.concatenate(all_errors_train, axis=0)

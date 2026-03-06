@@ -326,7 +326,7 @@ def preprocess(
         else:
             lst = df[col]
 
-        df_ohe = pd.get_dummies(lst, prefix=f'ohe-{col}', prefix_sep='-')
+        df_ohe = pd.get_dummies(lst, prefix=f'ohe-{col}', prefix_sep='-', dummy_na=True)
 
         # Check whether all class already exist in df_ohe
         col_set = set(list(df_ohe.columns))
@@ -454,8 +454,12 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) -> Tuple[Dict[str
 
         # Value Count this chunk
         for col, _ in ohe_columns:
-            for classname, cnt in df[col].value_counts().to_dict().items():
+            # Standardize None and NaN to NaN
+            df[col].fillna(np.nan)
+            for classname, cnt in df[col].value_counts(dropna=False).to_dict().items():
                 if classname not in col_class_cnt[col]:
+                    if not isinstance(col, str):
+                        col = "nan"
                     col_class_cnt[col][classname] = 0
                 col_class_cnt[col][classname] += cnt
     
@@ -467,7 +471,7 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) -> Tuple[Dict[str
         lst = [tup[0] for tup in lst]
 
         if len(lst) > top_n:
-            dropped_class_name = ''
+            dropped_class_name = 'nan'
         else:
             dropped_class_name = lst.pop()
         dropped[col] = dropped_class_name

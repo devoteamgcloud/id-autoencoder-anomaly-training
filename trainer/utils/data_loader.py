@@ -337,7 +337,7 @@ def preprocess(
             df_ohe[class_] = 0
         # Drop one random column
         df_ohe.drop([f'ohe-{col}-{dropped_class}'], axis=1, inplace=True)
-        ohe_dfs.append(df_ohe.astype(np.float32))
+        ohe_dfs.append(df_ohe)
 
     df_concat = pd.concat([df, *ohe_dfs], axis=1, ignore_index=True)
     all_columms = [] 
@@ -345,7 +345,7 @@ def preprocess(
         all_columms += list(d.columns)
     df_concat.columns = all_columms
 
-    return df_concat[features]
+    return df_concat[features].astype(np.float32)
 
 
 def create_stat_mapping(stat_encoding_columns: List[str]) -> Dict[str, Dict[str, Dict[str, float]]]:

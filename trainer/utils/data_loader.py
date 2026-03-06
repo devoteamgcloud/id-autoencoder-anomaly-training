@@ -203,7 +203,7 @@ def get_features(
     periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]],
     ohe_columns: List[Tuple[str, int]],
     ohe_class_names: Dict[str, List[str]]
-) -> List[str]:
+) -> Tuple[List[str], List[str], List[slice]]:
     """
     Get the features of the training data as a list of strings of feature names
     """
@@ -238,17 +238,23 @@ def get_features(
         elif period == "year":
             infix = "_year"
         features += [col + infix + "_sin", col + infix + "_cos"]
+    
+    feature_slices = [slice(0, len(features))]
+
     for col, _ in ohe_columns:  # OHE columns
         features += [
             f'ohe-{col}-{name}'
             for name in ohe_class_names[col]
         ]
+        feature_slices.append(
+            slice(len(features)-len(ohe_class_names[col]), len(features))
+        )
 
     # Free memory
     del df
     gc.collect()
 
-    return features, raw_features
+    return features, raw_features, feature_slices
     
 
 def preprocess(

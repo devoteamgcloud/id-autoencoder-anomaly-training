@@ -1,5 +1,5 @@
 import argparse
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Callable
 from datetime import datetime
 import logging
 
@@ -18,6 +18,7 @@ def create_autoencoder(
     input_dim: int,
     latent_vec_dim: int,
     enc_hidden_layers_num: int,
+    feature_slices: List[slice],
     dropout_rate: float = 0.25,
     activation: str = 'relu'
 ):
@@ -53,34 +54,70 @@ def create_autoencoder(
         hidden = layers.Dropout(dropout_rate)(hidden)
         prev_layer = hidden
     
-    # Output layer
-    output_layer = layers.Dense(input_dim, activation='linear', name='output')(prev_layer)
+    # Output layers
+    loss_functions: List[Callable[[List, List], List]] = []
+    weights = []
+    # Regular layer
+    ndim = feature_slices[0].stop - feature_slices[0].start
+    reg_layer = layers.Dense(ndim, activation='linear', name='output')(prev_layer)
+    loss_functions.append(tf.keras.losses.MeanSquaredError())
+    weights.append(ndim)
+
+    # OHE / Binary Layers
+    bin_layers = []
+    for i, slice_ in enumerate(feature_slices[1:], start=1):
+        ndim = slice_.stop - slice_.start
+        bin_layers = layers.Dense(ndim, activation='sigmoid', name=f'output-bin-{i}')(prev_layer)
+        loss_functions.append(
+            tf.keras.losses.BinaryCrossentropy() if (ndim == 1)
+            else tf.keras.losses.CategoricalCrossentropy()
+        )
+        weights.append(ndim)
+    
+
+    output_layers = [reg_layer, *bin_layers]
     
     # Create the autoencoder model
-    autoencoder = keras.Model(input_layer, output_layer, name='autoencoder')
-    
-    return autoencoder
+    autoencoder = keras.Model(
+        inputs=input_layer,
+        outputs=output_layers,
+        name='autoencoder'
+    )
+
+    # Create the loss function
+    weights = np.array(weights)
+    def _loss(y_true, y_pred):
+        losses = []
+        for slice_, loss_function in zip(feature_slices, loss_functions):
+            losses.append(
+                loss_function(y_true[slice_], y_pred[slice_])
+            )
+        return np.array(losses) * weights
+
+    return autoencoder, _loss
 
 
 def train_model(
         args: argparse.Namespace, 
         features: List[str],
         train: tf.data.Dataset, 
-        val: tf.data.Dataset
+        val: tf.data.Dataset,
+        feature_slices: List[slice]
     ) -> Tuple[keras.Model, keras.callbacks.History, str]:
     """Train the autoencoder model."""
 
     INPUT_DIM = len(features)
     LATENT_VEC_DIM = args.latent_dim if isinstance(args.latent_dim, int) else int(args.latent_dim * INPUT_DIM)
     N_HIDDEN = args.n_hidden
-    autoencoder = create_autoencoder(INPUT_DIM, LATENT_VEC_DIM, N_HIDDEN)
+    autoencoder, custom_loss_func = create_autoencoder(INPUT_DIM, LATENT_VEC_DIM, N_HIDDEN, feature_slices)
+
     def r2_score(y_true, y_pred):
         ss_res = tf.reduce_sum(tf.square(y_true - y_pred))
         ss_tot = tf.reduce_sum(tf.square(y_true - tf.reduce_mean(y_true)))
         return 1 - ss_res / (ss_tot + epsilon())
     autoencoder.compile(
         optimizer=keras.optimizers.Adam(learning_rate=args.learning_rate),
-        loss='mae',
+        loss=custom_loss_func,
         metrics=[r2_score]
     )
 

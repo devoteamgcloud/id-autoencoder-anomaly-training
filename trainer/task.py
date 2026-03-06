@@ -55,17 +55,17 @@ def run_training_pipeline(args: argparse.Namespace):
     kwargs['ohe_class_names'] = ohe_class_names
 
     # Create dataset object
-    features, raw_features = get_features(**kwargs)
+    features, raw_features, feature_slices = get_features(**kwargs)
 
     kwargs['stat_mapping'] = stat_mapping
     kwargs['ohe_dropped_class_names'] = ohe_dropped_class_names
-    
+
     generator, val_df = get_train_generator_and_val_set(features, **kwargs)
     train, val = create_tf_dataset(generator, val_df, features, args.batch_size)
 
     # Step 3: Start training process, get threshold and reconstruction errors
     logger.info("Starting model training...")
-    autoencoder, history, model_name = train_model(args, features, train, val)
+    autoencoder, history, model_name = train_model(args, features, train, val, feature_slices)
 
     # Step 4: Generate training report & hyperparameters
     logger.info("Generating training and threshold reports...")

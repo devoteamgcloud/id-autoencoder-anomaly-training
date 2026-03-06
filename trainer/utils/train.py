@@ -55,24 +55,21 @@ def create_autoencoder(
         prev_layer = hidden
     
     # Output layers
-    loss_functions: List[Callable[[List, List], List]] = []
-    weights = []
+    losses: Dict[str, str] = {}
+    weights: Dict[str, float] = {}
     # Regular layer
     ndim = feature_slices[0].stop - feature_slices[0].start
     reg_layer = layers.Dense(ndim, activation='linear', name='output')(prev_layer)
-    loss_functions.append(tf.keras.losses.MeanSquaredError())
-    weights.append(ndim)
+    losses['output'] = 'mse'
+    weights['output'] = ndim
 
     # OHE / Binary Layers
     bin_layers = []
     for i, slice_ in enumerate(feature_slices[1:], start=1):
         ndim = slice_.stop - slice_.start
         bin_layers.append(layers.Dense(ndim, activation='sigmoid', name=f'output-bin-{i}')(prev_layer))
-        loss_functions.append(
-            tf.keras.losses.BinaryCrossentropy() if (ndim == 1)
-            else tf.keras.losses.CategoricalCrossentropy()
-        )
-        weights.append(ndim)
+        losses[f'output-bin-{i}'] = 'binary_crossentropy' if (ndim == 1) else 'categorical_crossentropy'
+        weights[f'output-bin-{i}'] = np.log(ndim+1)  # Normalize
     
 
     output_layers = [reg_layer, *bin_layers]
@@ -84,17 +81,7 @@ def create_autoencoder(
         name='autoencoder'
     )
 
-    # Create the loss function
-    weights = np.array(weights)
-    def _loss(y_true, y_pred):
-        losses = []
-        for slice_, loss_function in zip(feature_slices, loss_functions):
-            losses.append(
-                loss_function(y_true[slice_], y_pred[slice_])
-            )
-        return np.array(losses) * weights
-
-    return autoencoder, _loss
+    return autoencoder, losses, weights
 
 
 def train_model(
@@ -109,7 +96,7 @@ def train_model(
     INPUT_DIM = len(features)
     LATENT_VEC_DIM = args.latent_dim if isinstance(args.latent_dim, int) else int(args.latent_dim * INPUT_DIM)
     N_HIDDEN = args.n_hidden
-    autoencoder, custom_loss_func = create_autoencoder(INPUT_DIM, LATENT_VEC_DIM, N_HIDDEN, feature_slices)
+    autoencoder, losses, weights = create_autoencoder(INPUT_DIM, LATENT_VEC_DIM, N_HIDDEN, feature_slices)
 
     def r2_score(y_true, y_pred):
         ss_res = tf.reduce_sum(tf.square(y_true - y_pred))
@@ -117,7 +104,8 @@ def train_model(
         return 1 - ss_res / (ss_tot + epsilon())
     autoencoder.compile(
         optimizer=keras.optimizers.Adam(learning_rate=args.learning_rate),
-        loss=custom_loss_func,
+        loss=losses,
+        loss_weights=weights,
         metrics=[r2_score]
     )
 

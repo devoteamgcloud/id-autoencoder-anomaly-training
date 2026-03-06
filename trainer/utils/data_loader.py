@@ -546,11 +546,11 @@ def get_train_generator_and_val_set(
             df = df.astype(np.float32)
 
             # Slice df
-            df_slices: List[pd.DataFrame] = []
-            for slice_ in feature_slices:
-                df_slices.append(df[features[slice_]])
+            df_slices: Dict[str, pd.DataFrame] = {}
+            for i, slice_ in enumerate(feature_slices):
+                df_slices[f'output-{i}'] = df[features[slice_]]
 
-            yield df, tuple(df_slices)  # Return twice for autoencoder architecture
+            yield df, df_slices  # Return twice for autoencoder architecture
             del df
             gc.collect()
 
@@ -561,12 +561,11 @@ def get_train_generator_and_val_set(
     )
 
     # Slice val_df
-    val_df_slices: List[pd.DataFrame] = []
-    for slice_ in feature_slices:
-        val_df_slices.append(val_df[features[slice_]])
-
+    val_df_slices: Dict[str, pd.DataFrame] = {}
+    for i, slice_ in enumerate(feature_slices):
+        val_df_slices[f'output-{i}'] = val_df[features[slice_]]
     
-    return _generator, (val_df, tuple(val_df_slices))
+    return _generator, (val_df, val_df_slices)
 
 
 def create_tf_dataset(
@@ -581,10 +580,10 @@ def create_tf_dataset(
         output_signature=(
             # The 'None' here allows variable rows per file
             tf.TensorSpec(shape=(None, len(features)), dtype=tf.float32),
-            tuple(
-                tf.TensorSpec(shape=(None, slice_.stop-slice_.start), dtype=tf.float32)
-                for slice_ in feature_slices
-            )
+            {
+                f'output-{i}': tf.TensorSpec(shape=(None, slice_.stop-slice_.start), dtype=tf.float32)
+                for i, slice_ in enumerate(feature_slices)
+            }
         )
     )
     

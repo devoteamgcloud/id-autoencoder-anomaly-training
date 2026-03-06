@@ -60,16 +60,16 @@ def create_autoencoder(
     # Regular layer
     ndim = feature_slices[0].stop - feature_slices[0].start
     reg_layer = layers.Dense(ndim, activation='linear', name='output')(prev_layer)
-    losses['output'] = 'mse'
-    weights['output'] = ndim
+    losses['output-0'] = 'mse'
+    weights['output-0'] = ndim
 
     # OHE / Binary Layers
     bin_layers = []
     for i, slice_ in enumerate(feature_slices[1:], start=1):
         ndim = slice_.stop - slice_.start
         bin_layers.append(layers.Dense(ndim, activation='sigmoid', name=f'output-bin-{i}')(prev_layer))
-        losses[f'output-bin-{i}'] = 'binary_crossentropy' if (ndim == 1) else 'categorical_crossentropy'
-        weights[f'output-bin-{i}'] = np.log(ndim+1)  # Normalize
+        losses[f'output-{i}'] = 'binary_crossentropy' if (ndim == 1) else 'categorical_crossentropy'
+        weights[f'output-{i}'] = np.log(ndim+1)  # Normalize
     
 
     output_layers = [reg_layer, *bin_layers]

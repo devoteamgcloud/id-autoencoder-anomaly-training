@@ -488,6 +488,7 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) -> Tuple[Dict[str
 
 def get_train_generator_and_val_set(
     features: List[str],
+    feature_slices: List[slice],
     id_columns: List[str],
     drop_columns: List[str],
     impute_columns: List[str],
@@ -501,7 +502,13 @@ def get_train_generator_and_val_set(
     ohe_class_names: Dict[str, List[str]],
     ohe_dropped_class_names: Dict[str, str]
 
-) -> Tuple[Generator[Tuple[pd.DataFrame, pd.DataFrame], None, None], pd.DataFrame]:
+) -> Tuple[
+    Generator[Tuple[pd.DataFrame, pd.DataFrame], None, None],
+    Tuple[
+        pd.DataFrame,
+        List[pd.DataFrame]
+        ]
+    ]:
     """Return the generator function for tensorflow"""
     # Train Generator
 
@@ -537,7 +544,13 @@ def get_train_generator_and_val_set(
                 continue
 
             df = df.astype(np.float32)
-            yield df, df  # Return twice for autoencoder architecture
+
+            # Slice df
+            df_slices: List[pd.DataFrame] = []
+            for slice_ in feature_slices:
+                df_slices.append(df[features[slice_]])
+
+            yield df, df_slices  # Return twice for autoencoder architecture
             del df
             gc.collect()
 
@@ -546,13 +559,19 @@ def get_train_generator_and_val_set(
         pd.read_parquet(f'{config.VAL_PATH}/'),
         **kwargs
     )
+
+    # Slice val_df
+    val_df_slices: List[pd.DataFrame] = []
+    for slice_ in feature_slices:
+        val_df_slices.append(val_df[features[slice_]])
+
     
-    return _generator, val_df
+    return _generator, (val_df, val_df_slices)
 
 
 def create_tf_dataset(
         generator: Generator[Tuple[pd.DataFrame, pd.DataFrame], None, None],
-        val_df: pd.DataFrame,
+        val_df: Tuple[pd.DataFrame, List[pd.DataFrame]],
         features: List[str],
         batch_size: int = 1024
     ) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
@@ -571,7 +590,7 @@ def create_tf_dataset(
     train_dataset = train_dataset.prefetch(tf.data.AUTOTUNE)
 
     if len(val_df) > 0:
-        val_dataset = tf.data.Dataset.from_tensor_slices((val_df, val_df)).batch(batch_size=batch_size)
+        val_dataset = tf.data.Dataset.from_tensor_slices(val_df).batch(batch_size=batch_size)
     else:
         val_dataset = None
     

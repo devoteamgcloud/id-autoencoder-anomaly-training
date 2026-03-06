@@ -59,7 +59,7 @@ def create_autoencoder(
     weights: Dict[str, float] = {}
     # Regular layer
     ndim = feature_slices[0].stop - feature_slices[0].start
-    reg_layer = layers.Dense(ndim, activation='linear', name='output')(prev_layer)
+    reg_layer = layers.Dense(ndim, activation='linear', name='output-0')(prev_layer)
     losses['output-0'] = 'mse'
     weights['output-0'] = ndim
 
@@ -67,8 +67,14 @@ def create_autoencoder(
     bin_layers = []
     for i, slice_ in enumerate(feature_slices[1:], start=1):
         ndim = slice_.stop - slice_.start
-        bin_layers.append(layers.Dense(ndim, activation='sigmoid', name=f'output-bin-{i}')(prev_layer))
-        losses[f'output-{i}'] = 'binary_crossentropy' if (ndim == 1) else 'categorical_crossentropy'
+        if ndim == 1:
+            activation = 'sigmoid'
+            loss = 'binary_crossentropy'
+        else:
+            activation = 'softmax'
+            loss = 'categorical_crossentropy'
+        bin_layers.append(layers.Dense(ndim, activation=activation, name=f'output-{i}')(prev_layer))
+        losses[f'output-{i}'] = loss
         weights[f'output-{i}'] = np.log(ndim+1)  # Normalize
     
 

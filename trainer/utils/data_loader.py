@@ -550,7 +550,7 @@ def get_train_generator_and_val_set(
             for slice_ in feature_slices:
                 df_slices.append(df[features[slice_]])
 
-            yield df, df_slices  # Return twice for autoencoder architecture
+            yield df, tuple(df_slices)  # Return twice for autoencoder architecture
             del df
             gc.collect()
 
@@ -566,7 +566,7 @@ def get_train_generator_and_val_set(
         val_df_slices.append(val_df[features[slice_]])
 
     
-    return _generator, (val_df, val_df_slices)
+    return _generator, (val_df, tuple(val_df_slices))
 
 
 def create_tf_dataset(

@@ -67,7 +67,7 @@ def create_autoencoder(
     bin_layers = []
     for i, slice_ in enumerate(feature_slices[1:], start=1):
         ndim = slice_.stop - slice_.start
-        bin_layers = layers.Dense(ndim, activation='sigmoid', name=f'output-bin-{i}')(prev_layer)
+        bin_layers.append(layers.Dense(ndim, activation='sigmoid', name=f'output-bin-{i}')(prev_layer))
         loss_functions.append(
             tf.keras.losses.BinaryCrossentropy() if (ndim == 1)
             else tf.keras.losses.CategoricalCrossentropy()

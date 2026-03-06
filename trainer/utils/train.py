@@ -108,6 +108,7 @@ def train_model(
         ss_res = tf.reduce_sum(tf.square(y_true - y_pred))
         ss_tot = tf.reduce_sum(tf.square(y_true - tf.reduce_mean(y_true)))
         return 1 - ss_res / (ss_tot + epsilon())
+    
     autoencoder.compile(
         optimizer=keras.optimizers.Adam(learning_rate=args.learning_rate),
         loss=losses,
@@ -136,7 +137,11 @@ def train_model(
         save_best_only=True,
         verbose=1
     )
-    callbacks = [early_stopping, reduce_lr, model_checkpoint]
+    class CleanProgress(tf.keras.callbacks.Callback):
+        def on_epoch_end(self, epoch, logs=None):
+            print(f"Epoch {epoch+1}: Total Loss: {logs['loss']:.4f} - R2: {logs['output-0_r2_score']:.4f}")
+
+    callbacks = [CleanProgress(), early_stopping, reduce_lr, model_checkpoint]
 
     logger.info("Starting training...")
     try:

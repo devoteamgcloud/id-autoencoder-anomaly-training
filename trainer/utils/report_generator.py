@@ -34,7 +34,7 @@ def generate_training_report(
         axes[0].grid(True)
 
         # Plot training & validation R2 Score
-        axes[1].plot(history.history['r2_score'], label='Training R2 Score')
+        axes[1].plot(history.history['output-0_r2_score'], label='Training R2 Score')
         if 'val_r2_score' in history.history:
             axes[1].plot(history.history['val_r2_score'], label='Validation R2 Score')
         axes[1].set_title('Model R2 Score')

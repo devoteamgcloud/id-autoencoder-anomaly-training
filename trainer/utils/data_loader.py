@@ -573,6 +573,7 @@ def create_tf_dataset(
         generator: Generator[Tuple[pd.DataFrame, pd.DataFrame], None, None],
         val_df: Tuple[pd.DataFrame, List[pd.DataFrame]],
         features: List[str],
+        feature_slices: List[slice],
         batch_size: int = 1024
     ) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
     train_dataset = tf.data.Dataset.from_generator(
@@ -580,7 +581,10 @@ def create_tf_dataset(
         output_signature=(
             # The 'None' here allows variable rows per file
             tf.TensorSpec(shape=(None, len(features)), dtype=tf.float32),
-            tf.TensorSpec(shape=(None, len(features)), dtype=tf.float32)
+            tuple(
+                tf.TensorSpec(shape=(None, slice_.stop-slice_.start), dtype=tf.float32)
+                for slice_ in feature_slices
+            )
         )
     )
     

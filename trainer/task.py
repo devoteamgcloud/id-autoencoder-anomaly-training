@@ -61,7 +61,7 @@ def run_training_pipeline(args: argparse.Namespace):
     kwargs['ohe_dropped_class_names'] = ohe_dropped_class_names
 
     generator, val_df = get_train_generator_and_val_set(features, feature_slices, **kwargs)
-    train, val = create_tf_dataset(generator, val_df, features, args.batch_size)
+    train, val = create_tf_dataset(generator, val_df, features, feature_slices, args.batch_size)
 
     # Step 3: Start training process, get threshold and reconstruction errors
     logger.info("Starting model training...")

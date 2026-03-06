@@ -221,6 +221,7 @@ def get_features(
     features -= set(drop_columns)
     features -= set(stat_encoding_columns)
     features -= set(col for col, _ in periodic_columns)
+    features -= set(col for col, _ in ohe_columns)
 
     # New Columns
     features = list(features)
@@ -344,6 +345,7 @@ def preprocess(
     for d in [df, *ohe_dfs]:
         all_columms += list(d.columns)
     df_concat.columns = all_columms
+    df_concat.drop([t[0] for t in ohe_columns], axis=1, inplace=True)
 
     return df_concat[features].astype(np.float32)
 

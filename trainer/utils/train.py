@@ -19,7 +19,7 @@ def create_autoencoder(
     latent_vec_dim: int,
     enc_hidden_layers_num: int,
     feature_slices: List[slice],
-    dropout_rate: float = 0.25,
+    dropout_rate: float = 0.1,
     activation: str = 'relu'
 ):
     """
@@ -40,54 +40,50 @@ def create_autoencoder(
     # Encoder
     prev_layer = input_layer
     for i, n_dim in enumerate(hidden_dims):
-        hidden = layers.Dense(n_dim, activation=activation, name=f'encoder_{i+1}')(prev_layer)
+        hidden = layers.Dense(n_dim, kernel_initializer='he_normal', name=f'encoder_{i+1}')(prev_layer)
+        hidden = layers.BatchNormalization()(hidden) # Added for stability
+        hidden = layers.Activation(activation)(hidden)
         hidden = layers.Dropout(dropout_rate)(hidden)
         prev_layer = hidden
 
     # Bottleneck layer
-    bottleneck = layers.Dense(latent_vec_dim, activation=activation, name='bottleneck')(prev_layer)
+    bottleneck = layers.Dense(latent_vec_dim, kernel_initializer='he_normal', name='bottleneck')(prev_layer)
+    bottleneck = layers.BatchNormalization()(bottleneck) 
+    bottleneck = layers.Activation(activation)(bottleneck)
     
     # Decoder
     prev_layer = bottleneck
     for i, n_dim in enumerate(hidden_dims[::-1]):
-        hidden = layers.Dense(n_dim, activation=activation, name=f'decoder_{i+1}')(prev_layer)
+        hidden = layers.Dense(n_dim, kernel_initializer='he_normal', name=f'decoder_{i+1}')(prev_layer)
+        hidden = layers.BatchNormalization()(hidden)
+        hidden = layers.Activation(activation)(hidden)
         hidden = layers.Dropout(dropout_rate)(hidden)
         prev_layer = hidden
     
-    # Output layers
-    losses: Dict[str, str] = {}
-    weights: Dict[str, float] = {}
-    # Regular layer
-    ndim = feature_slices[0].stop - feature_slices[0].start
-    weight_denom = ndim + len(feature_slices) - 1
-    reg_layer = layers.Dense(ndim, activation='linear', name='output-0')(prev_layer)
+    losses = {}
+    weights = {}
+    
+    # Output Head: Regression
+    ndim_reg = feature_slices[0].stop - feature_slices[0].start
+    reg_layer = layers.Dense(ndim_reg, activation='linear', name='output-0')(prev_layer)
     losses['output-0'] = 'mse'
-    weights['output-0'] = ndim / weight_denom
+    weights['output-0'] = 1.0 # Standardize weights first to debug
 
-    # OHE / Binary Layers
-    bin_layers = []
+    # Output Heads: OHE / Binary
+    output_layers = [reg_layer]
     for i, slice_ in enumerate(feature_slices[1:], start=1):
         ndim = slice_.stop - slice_.start
-        if ndim == 1:
-            activation = 'sigmoid'
-            loss = 'binary_crossentropy'
-        else:
-            activation = 'softmax'
-            loss = 'categorical_crossentropy'
-        bin_layers.append(layers.Dense(ndim, activation=activation, name=f'output-{i}')(prev_layer))
-        losses[f'output-{i}'] = loss
-        weights[f'output-{i}'] = 1.0 / weight_denom / np.log(ndim+1) # Normalization term
+        act = 'sigmoid' if ndim == 1 else 'softmax'
+        loss_type = 'binary_crossentropy' if ndim == 1 else 'categorical_crossentropy'
+        
+        out = layers.Dense(ndim, activation=act, name=f'output-{i}')(prev_layer)
+        output_layers.append(out)
+        
+        losses[f'output-{i}'] = loss_type
+        # If divergence continues, lower the weight of the categorical heads
+        weights[f'output-{i}'] = 0.5 
     
-
-    output_layers = [reg_layer, *bin_layers]
-    
-    # Create the autoencoder model
-    autoencoder = keras.Model(
-        inputs=input_layer,
-        outputs=output_layers,
-        name='autoencoder'
-    )
-
+    autoencoder = keras.Model(inputs=input_layer, outputs=output_layers)
     return autoencoder, losses, weights
 
 

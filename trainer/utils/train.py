@@ -76,7 +76,7 @@ def create_autoencoder(
             loss = 'categorical_crossentropy'
         bin_layers.append(layers.Dense(ndim, activation=activation, name=f'output-{i}')(prev_layer))
         losses[f'output-{i}'] = loss
-        weights[f'output-{i}'] = np.log(ndim+1) / weight_denom # Normalize
+        weights[f'output-{i}'] = 1.0 / weight_denom / np.log(ndim+1) # Normalization term
     
 
     output_layers = [reg_layer, *bin_layers]

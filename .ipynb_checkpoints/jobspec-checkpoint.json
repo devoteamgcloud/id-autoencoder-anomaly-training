@@ -1,8 +1,0 @@
-{
-    "service_account": "781750826172-compute@developer.gserviceaccount.com",
-    "machine_type": "n1-standard-8",
-    "accelerator_type": "NVIDIA_TESLA_T4",
-    "accelerator_count": 1,
-    "replica_count": 1,
-    "sync": true
-}

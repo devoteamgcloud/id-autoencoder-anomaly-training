@@ -178,7 +178,7 @@ def get_precomputed_data(
     stat_mapping = create_stat_mapping(stat_encoding_columns)
 
     # Generate OHE class names
-    ohe_class_names, ohe_dropped_class_names = create_ohe_class_names(ohe_columns)
+    ohe_class_names = create_ohe_class_names(ohe_columns)
 
     # Save data
     # Save the stat mapping to a local JSON file for later us in persistence.py
@@ -186,12 +186,11 @@ def get_precomputed_data(
     with open(precomputed_path, 'w') as f:
         precomputed_data = {
             'stat_mapping': stat_mapping,
-            'ohe_class_names': ohe_class_names,
-            'ohe_dropped_class_names': ohe_dropped_class_names
+            'ohe_class_names': ohe_class_names
         }
         json.dump(precomputed_data, f, indent=4)
 
-    return stat_mapping, ohe_class_names, ohe_dropped_class_names
+    return stat_mapping, ohe_class_names
 
 
 def get_features(
@@ -271,7 +270,6 @@ def preprocess(
     # Precomputed data
     stat_mapping: Dict[str, Dict[str, Dict[str, float]]],
     ohe_class_names: Dict[str, List[str]],
-    ohe_dropped_class_names: Dict[str, str]
 
 ) -> pd.DataFrame: 
     """Preprocess the dataframe into all-numeric and normalized values"""
@@ -322,13 +320,11 @@ def preprocess(
 
     # Perform One-Hot Encoding
     ohe_dfs = []
-    for col, _ in ohe_columns:
-        dropped_class = ohe_dropped_class_names[col]
+    for col, top_n in ohe_columns:
         
-        if dropped_class == '':
-            # Convert everything else outside top-n to "default" class
-            dropped_class = str(uuid4())
-            lst = df[col].where(df[col].isin(set(ohe_class_names[col])), dropped_class)
+        if len(ohe_class_names[col]) > top_n:
+            # Convert everything else outside top-n to "default" class (in this case, nan)
+            lst = df[col].where(df[col].isin(set(ohe_class_names[col])), np.nan)
         else:
             lst = df[col]
 
@@ -342,8 +338,6 @@ def preprocess(
                 continue
             # If class not exist, replace with zeroes
             df_ohe[class_] = 0
-        # Drop one random column
-        df_ohe.drop([f'ohe-{col}-{dropped_class}'], axis=1, inplace=True)
         ohe_dfs.append(df_ohe)
 
     df_concat = pd.concat([df, *ohe_dfs], axis=1, ignore_index=True)
@@ -468,22 +462,20 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) -> Tuple[Dict[str
                         col = "nan"
                     col_class_cnt[col][classname] = 0
                 col_class_cnt[col][classname] += cnt
-    
-    # Only take top n, set the other class as 'other', and remove arbitrary class (class) to prevent colinearity
-    dropped = {}
+
+    # Handle case when number of classes exceeds top_n, create a new "other" class
     ohe_classes = {}
     for col, top_n in ohe_columns:
         lst = sorted(col_class_cnt[col].items(), key=lambda t: t[1], reverse=True)
         lst = [tup[0] for tup in lst]
+        add_default_class = len(lst) > top_n
+        lst = lst[:top_n]
+        if add_default_class:
+            lst.append('nan')
 
-        if len(lst) > top_n:
-            dropped_class_name = 'nan'
-        else:
-            dropped_class_name = lst.pop()
-        dropped[col] = dropped_class_name
         ohe_classes[col] = lst[:top_n]
 
-    return ohe_classes, dropped
+    return ohe_classes
 
 
 def get_train_generator_and_val_set(
@@ -499,8 +491,7 @@ def get_train_generator_and_val_set(
 
     # Precomputed columns
     stat_mapping: Dict[str, Dict[str, Dict[str, float]]],
-    ohe_class_names: Dict[str, List[str]],
-    ohe_dropped_class_names: Dict[str, str]
+    ohe_class_names: Dict[str, List[str]]
 
 ) -> Tuple[
     Generator[Tuple[pd.DataFrame, pd.DataFrame], None, None],
@@ -523,7 +514,6 @@ def get_train_generator_and_val_set(
         "ohe_columns": ohe_columns,
         'stat_mapping': stat_mapping,
         'ohe_class_names': ohe_class_names,
-        'ohe_dropped_class_names': ohe_dropped_class_names
     }        
 
     def _generator():

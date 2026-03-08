@@ -81,7 +81,7 @@ def create_autoencoder(
         
         losses[f'output-{i}'] = loss_type
         # If divergence continues, lower the weight of the categorical heads
-        weights[f'output-{i}'] = 0.5 
+        weights[f'output-{i}'] = 0.5
     
     autoencoder = keras.Model(inputs=input_layer, outputs=output_layers)
     return autoencoder, losses, weights

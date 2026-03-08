@@ -51,14 +51,13 @@ def run_training_pipeline(args: argparse.Namespace):
     }
 
     # Precompute several data before running
-    stat_mapping, ohe_class_names, ohe_dropped_class_names = get_precomputed_data(args.stat_encoding_columns, args.ohe_columns)
+    stat_mapping, ohe_class_names = get_precomputed_data(args.stat_encoding_columns, args.ohe_columns)
     kwargs['ohe_class_names'] = ohe_class_names
 
     # Create dataset object
     features, raw_features, feature_slices = get_features(**kwargs)
 
     kwargs['stat_mapping'] = stat_mapping
-    kwargs['ohe_dropped_class_names'] = ohe_dropped_class_names
 
     generator, val_df = get_train_generator_and_val_set(features, feature_slices, **kwargs)
     train, val = create_tf_dataset(generator, val_df, features, feature_slices, args.batch_size)

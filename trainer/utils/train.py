@@ -235,14 +235,14 @@ def train_model(
     model_name = f"{args.model_name}_{args.curr_date_str}{args.postfix}.keras"
     early_stopping = keras.callbacks.EarlyStopping(
         monitor='loss',
-        patience=5,
+        patience=10,
         restore_best_weights=True,
         verbose=1
     )
     reduce_lr = keras.callbacks.ReduceLROnPlateau(
         monitor='loss',
         factor=0.5,
-        patience=2,
+        patience=5,
         min_lr=1e-7,
         verbose=1
     )

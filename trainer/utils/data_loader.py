@@ -463,7 +463,7 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) -> Tuple[Dict[str
                     col_class_cnt[col][classname] = 0
                 col_class_cnt[col][classname] += cnt
 
-    # Handle case when number of classes exceeds top_n, create a new "other" class
+    # Handle case when number of classes exceeds top_n, create a nehen number of classes exceeds top_n, create a new "ot "otherr" class
     ohe_classes = {}
     for col, top_n in ohe_columns:
         lst = sorted(col_class_cnt[col].items(), key=lambda t: t[1], reverse=True)

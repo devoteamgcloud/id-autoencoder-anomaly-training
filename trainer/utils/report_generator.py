@@ -25,23 +25,21 @@ def generate_training_report(
 
         # Plot training & validation loss
         axes[0].plot(history.history['loss'], label='Training Loss')
-        if 'val_loss' in history.history:
-            axes[0].plot(history.history['val_loss'], label='Validation Loss')
         axes[0].set_title('Model Loss')
         axes[0].set_xlabel('Epoch')
         axes[0].set_ylabel('Loss')
         axes[0].legend()
         axes[0].grid(True)
 
-        # Plot training & validation R2 Score
-        axes[1].plot(history.history['output-0_r2_score'], label='Training R2 Score')
-        if 'val_r2_score' in history.history:
-            axes[1].plot(history.history['val_r2_score'], label='Validation R2 Score')
-        axes[1].set_title('Model R2 Score')
-        axes[1].set_xlabel('Epoch')
-        axes[1].set_ylabel('R2 Score')
-        axes[1].legend()
-        axes[1].grid(True)
+        # # Plot training & validation R2 Score
+        # axes[1].plot(history.history['output-0_r2_score'], label='Training R2 Score')
+        # if 'val_r2_score' in history.history:
+        #     axes[1].plot(history.history['val_r2_score'], label='Validation R2 Score')
+        # axes[1].set_title('Model R2 Score')
+        # axes[1].set_xlabel('Epoch')
+        # axes[1].set_ylabel('R2 Score')
+        # axes[1].legend()
+        # axes[1].grid(True)
 
         plt.tight_layout()
         if not os.path.exists(config.MODEL_PATH):

@@ -1,0 +1,111 @@
+{
+    "stat_mapping": {},
+    "ohe_class_names": {
+        "ca_code": [
+            "500520",
+            "110",
+            "6017",
+            "121",
+            "013",
+            "153"
+        ],
+        "target_channel": [
+            "biSHOPEEDIRECT",
+            "Topup E-money MIP DANA",
+            "biDANADIRECT",
+            "biMIPTOPUPWALLET",
+            "biTOPUPLABANK",
+            "Topup E-money MIP ShopeePay"
+        ],
+        "sic_code": [
+            "Mobile Banking",
+            "Automatic deposit mobile",
+            "Internet Banking"
+        ],
+        "terminal": [
+            "Finnet",
+            "027777  ",
+            "121BLPG",
+            "99020001",
+            "94866572",
+            "94866567"
+        ],
+        "source_channel": [
+            "caDIGIPOSTSEL",
+            "caBANKBJB",
+            "Bank Lampung",
+            "99020001       ",
+            "caBANKLAMPUNG",
+            "caBANKPERMATA"
+        ],
+        "product_code": [
+            "001038",
+            "001024",
+            "001025",
+            "001034",
+            "001022",
+            "001028"
+        ],
+        "trans_info": [
+            null,
+            "BJB MOBILE",
+            "Bandar Lampung",
+            "MOBILE BANKING BANK BENGKULU     SMU IDN",
+            "PERMATABANK            IB",
+            "Bidakara Pancoran"
+        ],
+        "ca_code_top1": [
+            "500520",
+            "110",
+            "6017",
+            "121",
+            "013",
+            "153"
+        ],
+        "target_channel_top1": [
+            "biSHOPEEDIRECT",
+            "biMIPTOPUPWALLET",
+            "Topup E-money MIP DANA",
+            "biDANADIRECT",
+            "biTOPUPLABANK",
+            "Topup E-money MIP ShopeePay"
+        ],
+        "sic_code_top1": [
+            "Mobile Banking",
+            "Automatic deposit mobile",
+            "Internet Banking"
+        ],
+        "terminal_top1": [
+            "Finnet",
+            "027777  ",
+            "121BLPG",
+            "99020001",
+            "94866572",
+            "94866567"
+        ],
+        "source_channel_top1": [
+            "caDIGIPOSTSEL",
+            "caBANKBJB",
+            "Bank Lampung",
+            "99020001       ",
+            "caBANKLAMPUNG",
+            "caBANKPERMATA"
+        ],
+        "product_code_top1": [
+            "001038",
+            "001025",
+            "001024",
+            "001034",
+            "001022",
+            "001028"
+        ],
+        "trans_info_top1": [
+            null,
+            "BJB MOBILE",
+            "Bandar Lampung",
+            "MOBILE BANKING BANK BENGKULU     SMU IDN",
+            "PERMATABANK            IB",
+            "Bidakara Pancoran"
+        ]
+    }
+}

@@ -81,7 +81,7 @@ def create_autoencoder(
         
         losses[f'output-{i}'] = loss_type
         # If divergence continues, lower the weight of the categorical heads
-        weights[f'output-{i}'] = 0.5
+        weights[f'output-{i}'] = 0.05
     
     autoencoder = keras.Model(inputs=input_layer, outputs=output_layers)
     return autoencoder, losses, weights
@@ -117,14 +117,14 @@ def train_model(
     model_name = f"{args.model_name}_{args.curr_date_str}{args.postfix}.keras"
     early_stopping = keras.callbacks.EarlyStopping(
         monitor='loss',
-        patience=10,
+        patience=5,
         restore_best_weights=True,
         verbose=1
     )
     reduce_lr = keras.callbacks.ReduceLROnPlateau(
         monitor='loss',
         factor=0.5,
-        patience=5,
+        patience=2,
         min_lr=1e-7,
         verbose=1
     )

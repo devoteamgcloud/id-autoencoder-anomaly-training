@@ -9,7 +9,13 @@ autoencoder_anomaly_detection.egg-info
 dist
 train_data
 val_data
+model
+training_log.csv
 
 # Configurations
 config.json
 jobspec.json
+
+# Unimportant file
+.ipynb_checkpoints/
+__pycache__/

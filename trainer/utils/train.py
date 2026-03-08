@@ -162,7 +162,7 @@ def find_threshold(
         args: argparse.Namespace,
         autoencoder: keras.Model,
         train: tf.data.Dataset,
-        val_df: pd.DataFrame
+        val_df: Tuple[pd.DataFrame, Dict[str, pd.DataFrame]]
     ) -> Tuple[float, np.ndarray, np.ndarray]:
 
     # Function for reconcat separated dataframes
@@ -184,7 +184,9 @@ def find_threshold(
     all_errors_train = np.concatenate(all_errors_train, axis=0)
     # Compute val error
     try:
-        all_errors_val = np.sqrt(np.mean(np.square(autoencoder(val_df, training=False) - val_df), axis=1))
+        val_reconstruction = reconcat(autoencoder(val_df[0], training=False))
+        val_loss = np.sqrt(np.mean(np.square(val_reconstruction - val_df), axis=1))
+        all_errors_val = val_loss
     except Exception as e:
         all_errors_val = np.array([])
 

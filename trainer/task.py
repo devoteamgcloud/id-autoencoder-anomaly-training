@@ -69,7 +69,7 @@ def run_training_pipeline(args: argparse.Namespace):
     # Step 4: Generate training report & hyperparameters
     logger.info("Generating training and threshold reports...")
     generate_training_report(args, history)
-    threshold, all_errors_train, all_errors_val = find_threshold(args, autoencoder, train, val_df, history)
+    threshold, all_errors_train, all_errors_val = find_threshold(args, autoencoder, train, val_df)
     generate_threshold_report(args, threshold, all_errors_train, all_errors_val)
     generate_hyperparameters_report(args, threshold, features, raw_features)
 

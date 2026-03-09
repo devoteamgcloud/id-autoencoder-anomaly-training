@@ -124,6 +124,7 @@ def generate_hyperparameters_report(
         'log-scale-columns': args.log_scale_columns,
         'stat-encoding-columns': args.stat_encoding_columns,
         'periodic-columns': args.periodic_columns,
+        'ohe-columns': args.ohe_columns,
         'time-column': args.time_column,
         'taken-group': args.taken_group
     }

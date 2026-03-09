@@ -184,7 +184,7 @@ def create_autoencoder(
     
     # Output Head: Regression
     ndim_reg = feature_slices[0].stop - feature_slices[0].start
-    reg_layer = layers.Dense(ndim_reg, activation='linear', name='output-0')(prev_layer)
+    reg_layer = layers.Dense(ndim_reg, activation='softplus', name='output-0')(prev_layer)
     losses['output-0'] = 'mae'
     weights['output-0'] = 1.0 # Standardize weights first to debug
 

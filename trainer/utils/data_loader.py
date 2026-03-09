@@ -313,8 +313,8 @@ def preprocess(
         else:
             raise RuntimeError(f"Periodic columns period info should be int, float, \"time\", \"year\", or {PERIODIC_COLUMN_PATTERN}. Found \"{period}\" instead.")
         
-        df[col + infix + '_sin'] = np.sin(scaled)
-        df[col + infix + '_cos'] = np.cos(scaled)
+        df[col + infix + '_sin'] = np.sin(scaled) + 1
+        df[col + infix + '_cos'] = np.cos(scaled) + 1
 
     df.drop(list(set(col for col, _ in periodic_columns)), inplace=True, axis=1)
 

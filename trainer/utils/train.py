@@ -2,6 +2,7 @@ import argparse
 from typing import List, Tuple, Dict, Callable
 from datetime import datetime
 import logging
+import json
 
 import tensorflow as tf
 from tensorflow import keras
@@ -220,6 +221,10 @@ def train_model(
     N_HIDDEN = args.n_hidden
     autoencoder, losses, weights = create_autoencoder(INPUT_DIM, LATENT_VEC_DIM, N_HIDDEN, feature_slices)
 
+    # Save losses and weights
+    with open(f'{config.MODEL_PATH}/loss_function.json') as f:
+        json.dump({'loss': losses, 'weight': weights}, f)
+
     def mape(y_true, y_pred):
         return tf.reduce_mean((tf.abs(y_true - y_pred) + 0.1) / (tf.abs(y_true) + 0.1))
     
@@ -282,10 +287,12 @@ def find_threshold(
     ) -> Tuple[float, np.ndarray, np.ndarray]:
 
     # Function for reconcat separated dataframes
-    def reconcat(result: List):
+   def reconcat(result: List):
         np_list = []
         for tensor in result:
             np_list.append(tensor.numpy())
+        if len(np_list) == 1:
+            return np_list[0]
         concatenated = np.concatenate(np_list, axis=1)
         return concatenated
 

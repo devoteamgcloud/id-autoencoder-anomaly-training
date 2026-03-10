@@ -94,7 +94,7 @@ def save_model_and_reports(
         logger.error(f"Failed to save hyperparameters: {e}")
     
 
-    # Specific for this model, save column info
+    # Save column info
     try:
         # Save for historical reference
         blob = bucket.blob(f"reports/{args.model_name}/{args.curr_date_str}{args.postfix}/columns_info.json")
@@ -109,8 +109,22 @@ def save_model_and_reports(
     except Exception as e:
         logger.error(f"Failed to save columns info: {e}")
 
-    storage_client.close()
+    # Save loss function
+    try:
+        # Save for historical reference
+        blob = bucket.blob(f"reports/{args.model_name}/{args.curr_date_str}{args.postfix}/loss_function.json")
+        blob.upload_from_filename(f"{config.MODEL_PATH}/loss_function.json")
 
+        # Save for latest reference (overwrites previous)
+        blob = bucket.blob(f"reports/{args.model_name}/00000000{args.postfix}/loss_function.json")
+        blob.upload_from_filename(f"{config.MODEL_PATH}/loss_function.json")
+
+        logger.info(f"Columns info saved to {args.gcs_path}/reports/{args.model_name}/{args.curr_date_str}{args.postfix}/loss_function.json")
+
+    except Exception as e:
+        logger.error(f"Failed to save columns info: {e}")
+
+    storage_client.close()
 
     # Save hyperparameters and columns info to big query
     try:

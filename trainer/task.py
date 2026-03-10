@@ -71,7 +71,7 @@ def run_training_pipeline(args: argparse.Namespace):
     generate_training_report(args, history)
     threshold, all_errors_train, all_errors_val = find_threshold(args, autoencoder, train, val_df)
     generate_threshold_report(args, threshold, all_errors_train, all_errors_val)
-    generate_hyperparameters_report(args, threshold, features, raw_features)
+    generate_hyperparameters_report(args, threshold, features, raw_features, feature_slices)
 
     # Step 5: Save model and training report to GCS
     logger.info("Saving model and reports to GCS...")

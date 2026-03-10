@@ -287,7 +287,7 @@ def find_threshold(
     ) -> Tuple[float, np.ndarray, np.ndarray]:
 
     # Function for reconcat separated dataframes
-   def reconcat(result: List):
+    def reconcat(result: List):
         np_list = []
         for tensor in result:
             np_list.append(tensor.numpy())

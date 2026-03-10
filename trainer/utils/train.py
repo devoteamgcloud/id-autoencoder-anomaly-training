@@ -291,9 +291,10 @@ def find_threshold(
         np_list = []
         for tensor in result:
             np_list.append(tensor.numpy())
-        if len(np_list) == 1:
-            return np_list[0]
-        concatenated = np.concatenate(np_list, axis=1)
+        try:
+            concatenated = np.concatenate(np_list, axis=1)
+        except:
+            return result
         return concatenated
 
     # Compute train error

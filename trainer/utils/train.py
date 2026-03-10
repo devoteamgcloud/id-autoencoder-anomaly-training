@@ -222,7 +222,7 @@ def train_model(
     autoencoder, losses, weights = create_autoencoder(INPUT_DIM, LATENT_VEC_DIM, N_HIDDEN, feature_slices)
 
     # Save losses and weights
-    with open(f'{config.MODEL_PATH}/loss_function.json') as f:
+    with open(f'{config.MODEL_PATH}/loss_function.json', 'w') as f:
         json.dump({'loss': losses, 'weight': weights}, f)
 
     def mape(y_true, y_pred):

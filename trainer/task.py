@@ -140,18 +140,19 @@ if __name__ == '__main__':
 
     args.curr_date_str = datetime.now().strftime('%Y%m%d')
 
-    assert (len(args.periodic_columns) % 2) == 0, "Periodic columns args length should be even"
+    
+    assert (args.periodic_columns is None) or (len(args.periodic_columns) % 2) == 0, "Periodic columns args length should be even"
     args.periodic_columns = [
         (args.periodic_columns[i], validator.validate_periodic_format(args.periodic_columns[i+1]))
         for i in range(0, len(args.periodic_columns), 2)
     ]
 
-    assert (len(args.ohe_columns) % 2) == 0, "OHE columns args length should be even"
+    assert (args.ohe_columns is None) or ((len(args.ohe_columns) % 2) == 0), "OHE columns args length should be even"
     args.ohe_columns = [
         (args.ohe_columns[i], validator.validate_ohe_format(args.ohe_columns[i+1]))
         for i in range(0, len(args.ohe_columns), 2)
     ]
-    assert (len(args.columns_dtypes) % 2) == 0, "Columns data types length should be even"
+    assert (args.columns_dtypes is None) or ((len(args.columns_dtypes) % 2) == 0), "Columns data types length should be even"
     args.columns_dtypes = [
         (args.columns_dtypes[i], args.columns_dtypes[i+1])
         for i in range(0, len(args.columns_dtypes), 2)

@@ -151,7 +151,7 @@ if __name__ == '__main__':
         (args.ohe_columns[i], validator.validate_ohe_format(args.ohe_columns[i+1]))
         for i in range(0, len(args.ohe_columns), 2)
     ]
-    assert (len(args.ohe_columns) % 2) == 0, "Columns data types length should be even"
+    assert (len(args.columns_dtypes) % 2) == 0, "Columns data types length should be even"
     args.columns_dtypes = [
         (args.columns_dtypes[i], args.columns_dtypes[i+1])
         for i in range(0, len(args.columns_dtypes), 2)

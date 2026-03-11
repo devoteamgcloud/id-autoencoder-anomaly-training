@@ -127,6 +127,7 @@ if __name__ == '__main__':
 
     # Misc
     parser.add_argument('--get-new-data', type=validator.valid_get_new_data, default=True, help='Whether to get new data from BigQuery or use existing local parquet files')
+    parser.add_argument('--columns-dtypes', nargs='*', help='Data type of each raw columns')
     
     args = parser.parse_args()
 
@@ -149,6 +150,11 @@ if __name__ == '__main__':
     args.ohe_columns = [
         (args.ohe_columns[i], validator.validate_ohe_format(args.ohe_columns[i+1]))
         for i in range(0, len(args.ohe_columns), 2)
+    ]
+    assert (len(args.ohe_columns) % 2) == 0, "Columns data types length should be even"
+    args.columns_dtypes = [
+        (args.columns_dtypes[i], args.columns_dtypes[i+1])
+        for i in range(0, len(args.columns_dtypes), 2)
     ]
 
     # Create Paths

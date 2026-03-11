@@ -119,6 +119,7 @@ def generate_hyperparameters_report(
         'features': features,
         'raw_features': raw_features,
         'feature_slices': [[s.start, s.stop, s.step] for s in feature_slices],
+        'columns_dtypes': args.columns_dtypes,
         'id-columns': args.id_columns,
         'drop-columns': args.drop_columns,
         'impute-columns': args.impute_columns,

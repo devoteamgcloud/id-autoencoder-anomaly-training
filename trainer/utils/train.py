@@ -287,12 +287,15 @@ def find_threshold(
     ) -> Tuple[float, np.ndarray, np.ndarray]:
 
     # Function for reconcat separated dataframes
-    def reconcat(result: List):
+    def reconcat(result: List | np.ndarray):
+        if not isinstance(result, list):
+            return result
         np_list = []
         for tensor in result:
-            np_list.append(tensor.numpy())
-        if len(np_list) == 1:
-            return np_list[0]
+            if not isinstance(tensor, np.ndarray):
+                np_list.append(tensor.numpy())
+            else:
+                np_list.append(tensor)
         concatenated = np.concatenate(np_list, axis=1)
         return concatenated
 

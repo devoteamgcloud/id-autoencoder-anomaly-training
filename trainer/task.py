@@ -147,6 +147,8 @@ if __name__ == '__main__':
             (args.periodic_columns[i], validator.validate_periodic_format(args.periodic_columns[i+1]))
             for i in range(0, len(args.periodic_columns), 2)
         ]
+    else:
+        args.periodic_columns = []
 
     assert (args.ohe_columns is None) or ((len(args.ohe_columns) % 2) == 0), "OHE columns args length should be even"
     if args.ohe_columns:
@@ -154,6 +156,8 @@ if __name__ == '__main__':
             (args.ohe_columns[i], validator.validate_ohe_format(args.ohe_columns[i+1]))
             for i in range(0, len(args.ohe_columns), 2)
         ]
+    else:
+        args.ohe_columns = []
 
     assert (args.columns_dtypes is None) or ((len(args.columns_dtypes) % 2) == 0), "Columns data types length should be even"
     if args.columns_dtypes:
@@ -161,6 +165,8 @@ if __name__ == '__main__':
             (args.columns_dtypes[i], args.columns_dtypes[i+1])
             for i in range(0, len(args.columns_dtypes), 2)
         ]
+    else:
+        args.columns_dtypes = []
 
     # Create Paths
     if not os.path.exists(config.TRAIN_PATH):

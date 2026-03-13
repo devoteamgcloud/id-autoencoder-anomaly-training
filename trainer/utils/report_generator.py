@@ -16,36 +16,72 @@ logger = logging.getLogger(__name__)
 
 matplotlib.use('Agg')
 
+
 def generate_training_report(
     args: argparse.Namespace,
     history: Any
 ) -> None:
     if history:
-        fig, axes = plt.subplots(1, 2, figsize=(15, 5))
-
-        # Plot training & validation loss
+        fig, axes = plt.subplots(1, 3, figsize=(20, 5))
+        
+        # Plot 1: Training & Validation Loss
         axes[0].plot(history.history['loss'], label='Training Loss')
+        if 'val_loss' in history.history:
+            axes[0].plot(history.history['val_loss'], label='Validation Loss')
         axes[0].set_title('Model Loss')
         axes[0].set_xlabel('Epoch')
         axes[0].set_ylabel('Loss')
         axes[0].legend()
         axes[0].grid(True)
-
-        # # Plot training & validation R2 Score
-        # axes[1].plot(history.history['output-0_r2_score'], label='Training R2 Score')
-        # if 'val_r2_score' in history.history:
-        #     axes[1].plot(history.history['val_r2_score'], label='Validation R2 Score')
-        # axes[1].set_title('Model R2 Score')
-        # axes[1].set_xlabel('Epoch')
-        # axes[1].set_ylabel('R2 Score')
-        # axes[1].legend()
-        # axes[1].grid(True)
-
+        
+        # Plot 2: Training & Validation Output-0 MAPE
+        axes[1].plot(history.history['output-0_mape'], label='Training MAPE')
+        if 'val_output-0_mape' in history.history:
+            axes[1].plot(history.history['val_output-0_mape'], label='Validation MAPE')
+        axes[1].set_title('Output-0 MAPE')
+        axes[1].set_xlabel('Epoch')
+        axes[1].set_ylabel('MAPE')
+        axes[1].legend()
+        axes[1].grid(True)
+        
+        # Plot 3: Average Training & Validation Accuracy for output-{i}
+        # Find all accuracy metrics for output-{i} (assuming there might be multiple)
+        train_acc_keys = [key for key in history.history.keys() if 'output-' in key and '_accuracy' in key and 'val_' not in key]
+        val_acc_keys = [key for key in history.history.keys() if 'val_output-' in key and '_accuracy' in key]
+        
+        if train_acc_keys:
+            # Calculate average accuracy across all output-{i} metrics
+            train_acc_avg = []
+            val_acc_avg = []
+            
+            epochs = len(history.history[train_acc_keys[0]])
+            
+            for epoch in range(epochs):
+                # Average training accuracy for this epoch
+                train_epoch_acc = [history.history[key][epoch] for key in train_acc_keys]
+                train_acc_avg.append(sum(train_epoch_acc) / len(train_epoch_acc))
+                
+                # Average validation accuracy for this epoch (if available)
+                if val_acc_keys:
+                    val_epoch_acc = [history.history[key][epoch] for key in val_acc_keys]
+                    val_acc_avg.append(sum(val_epoch_acc) / len(val_epoch_acc))
+            
+            axes[2].plot(train_acc_avg, label='Training Accuracy (avg)')
+            if val_acc_avg:
+                axes[2].plot(val_acc_avg, label='Validation Accuracy (avg)')
+            
+            axes[2].set_title('Average Output-{i} Accuracy')
+            axes[2].set_xlabel('Epoch')
+            axes[2].set_ylabel('Accuracy')
+            axes[2].legend()
+            axes[2].grid(True)
+        
         plt.tight_layout()
+        
         if not os.path.exists(config.MODEL_PATH):
             os.makedirs(config.MODEL_PATH)
-        plt.savefig(f"{config.MODEL_PATH}/loss.png")
-        # plt.close(fig)
+        plt.savefig(f"{config.MODEL_PATH}/training_report.png", dpi=300, bbox_inches='tight')
+        plt.show()  # Optional: remove if you don't want to display the plot
 
 
 def generate_threshold_report(

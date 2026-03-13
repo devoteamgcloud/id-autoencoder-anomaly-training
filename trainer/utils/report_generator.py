@@ -80,7 +80,7 @@ def generate_training_report(
         
         if not os.path.exists(config.MODEL_PATH):
             os.makedirs(config.MODEL_PATH)
-        plt.savefig(f"{config.MODEL_PATH}/training_report.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{config.MODEL_PATH}/loss.png", dpi=300, bbox_inches='tight')
 
 
 def generate_threshold_report(

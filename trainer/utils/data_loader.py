@@ -12,8 +12,6 @@ from google.cloud import bigquery, storage
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from tdigest import TDigest  # For quantile estimation
-
 import trainer.config as config
 
 logger = logging.getLogger(__name__)
@@ -393,6 +391,7 @@ def create_stat_mapping(stat_encoding_columns: List[str]) -> Dict[str, Dict[str,
             # update quantile sketch
             for key, values in grouped:
                 if key not in quantile_mapping:
+                    from tdigest import TDigest  # lazy: only when stat encoding is used
                     quantile_mapping[key] = TDigest()
                 quantile_mapping[key].batch_update(values.values)
 
@@ -475,7 +474,7 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) -> Tuple[Dict[str
         if add_default_class:
             lst.append('nan')
 
-        ohe_classes[col] = lst[:top_n]
+        ohe_classes[col] = lst  # includes 'nan' (other) class when len > top_n
 
     return ohe_classes
 
@@ -547,8 +546,15 @@ def get_train_generator_and_val_set(
             gc.collect()
 
     # Val Dataset
+    # Load only first N shards to avoid OOM (val is used for loss monitoring only)
+    _val_files = sorted(
+        f for f in os.listdir(config.VAL_PATH) if f.endswith('.parquet')
+    )[:5]
     val_df = preprocess(
-        pd.read_parquet(f'{config.VAL_PATH}/'),
+        pd.concat([
+            pd.read_parquet(os.path.join(config.VAL_PATH, f))
+            for f in _val_files
+        ], ignore_index=True),
         **kwargs
     )
 

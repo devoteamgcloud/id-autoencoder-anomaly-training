@@ -166,10 +166,8 @@ def create_autoencoder(
         hidden = layers.Dropout(dropout_rate)(hidden)
         prev_layer = hidden
 
-    # Bottleneck layer
+    # Bottleneck layer — kept linear so the latent space is unconstrained
     bottleneck = layers.Dense(latent_vec_dim, kernel_initializer='he_normal', name='bottleneck')(prev_layer)
-    bottleneck = layers.BatchNormalization()(bottleneck) 
-    bottleneck = layers.Activation(activation)(bottleneck)
     
     # Decoder
     prev_layer = bottleneck
@@ -311,7 +309,7 @@ def find_threshold(
     # Compute val error
     try:
         val_reconstruction = reconcat(autoencoder(val_df[0], training=False))
-        val_loss = np.sqrt(np.mean(np.square(val_reconstruction - val_df), axis=1))
+        val_loss = np.sqrt(np.mean(np.square(val_reconstruction - val_df[0].values), axis=1))
         all_errors_val = val_loss
     except Exception as e:
         all_errors_val = np.array([])

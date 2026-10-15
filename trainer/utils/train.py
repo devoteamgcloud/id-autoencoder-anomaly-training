@@ -177,9 +177,10 @@ def create_autoencoder(
         hidden = layers.Dropout(dropout_rate)(hidden)
         prev_layer = hidden
     
-    # Single output head — reconstruct all features (numerical + OHE) uniformly with MSE
+    # Single output head — reconstruct all features (numerical + OHE) uniformly with MAE
+    # MAE is used over MSE because z-score features are unbounded and MSE would explode
     output_layer = layers.Dense(input_dim, activation='linear', name='output-0')(prev_layer)
-    losses = {'output-0': 'mse'}
+    losses = {'output-0': 'mae'}
     weights = {'output-0': 1.0}
 
     autoencoder = keras.Model(inputs=input_layer, outputs=output_layer)

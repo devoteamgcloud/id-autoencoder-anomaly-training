@@ -216,7 +216,7 @@ def score_labeled(model, data_paths: List[str], features: List[str], kwargs: Dic
                 continue
             sub, subk, label = sub[keep], subk[keep], label[keep]
 
-            X = preprocess(sub.copy(), features=features, **kwargs).values
+            X = preprocess(sub.copy(), **kwargs).values  # kwargs already holds `features`
             meta = subk.reset_index(drop=True)
             meta["trx_id"] = sub["trx_id"].values if "trx_id" in sub else np.nan
             meta["gt_label"] = label
@@ -245,7 +245,7 @@ def score_proxy_sample(model, val_path: str, features: List[str], kwargs: Dict,
     for fname in shards:
         raw = pd.read_parquet(os.path.join(val_path, fname))
         meta = pd.DataFrame({c: raw[c].values for c in PROXY_LABELS if c in raw.columns})
-        X = preprocess(raw.copy(), features=features, **kwargs).values
+        X = preprocess(raw.copy(), **kwargs).values  # kwargs already holds `features`
         meta["recon_error"] = reconstruction_error(model, X)
         parts.append(meta)
     return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()

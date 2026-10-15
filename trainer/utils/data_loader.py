@@ -196,6 +196,7 @@ def get_features(
     drop_columns: List[str],
     impute_columns: List[str],
     log_scale_columns: List[str],
+    signed_log_columns: List[str],
     stat_encoding_columns: List[str],
     periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]],
     ohe_columns: List[Tuple[str, int]],
@@ -261,6 +262,7 @@ def preprocess(
     drop_columns: List[str],
     impute_columns: List[str],
     log_scale_columns: List[str],
+    signed_log_columns: List[str],
     stat_encoding_columns: List[str],
     periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]],
     ohe_columns: List[Tuple[str, int]],
@@ -269,7 +271,7 @@ def preprocess(
     stat_mapping: Dict[str, Dict[str, Dict[str, float]]],
     ohe_class_names: Dict[str, List[str]],
 
-) -> pd.DataFrame: 
+) -> pd.DataFrame:
     """Preprocess the dataframe into all-numeric and normalized values"""
     # Drop ID columns
     df.drop(id_columns, inplace=True, axis=1)
@@ -286,8 +288,14 @@ def preprocess(
             df[f'cat-{col}-{feat}'] = df[col].map(stat_mapping[col][feat]).fillna(0.0)
     df.drop(stat_encoding_columns, inplace=True, axis=1)
 
-    # Perform Log Scaling
+    # Perform Log Scaling (non-negative columns only)
     df[log_scale_columns] = np.log10(df[log_scale_columns]+1)
+
+    # Signed log for columns that can be negative (e.g. z-scores):
+    # sign(x) * log10(|x| + 1)  →  maps all reals into roughly [-3, 3]
+    for col in signed_log_columns:
+        if col in df.columns:
+            df[col] = np.sign(df[col]) * np.log10(np.abs(df[col]) + 1)
 
     # Convert periodic columns to phasor
     for col, period in periodic_columns:
@@ -486,6 +494,7 @@ def get_train_generator_and_val_set(
     drop_columns: List[str],
     impute_columns: List[str],
     log_scale_columns: List[str],
+    signed_log_columns: List[str],
     stat_encoding_columns: List[str],
     periodic_columns: List[Tuple[str, Union[float, str, Literal["time", "year"]]]],
     ohe_columns: List[Tuple[str, int]],
@@ -510,12 +519,13 @@ def get_train_generator_and_val_set(
         "drop_columns": drop_columns,
         "impute_columns": impute_columns,
         "log_scale_columns": log_scale_columns,
+        "signed_log_columns": signed_log_columns,
         "stat_encoding_columns": stat_encoding_columns,
         "periodic_columns": periodic_columns,
         "ohe_columns": ohe_columns,
         'stat_mapping': stat_mapping,
         'ohe_class_names': ohe_class_names,
-    }        
+    }
 
     def _generator():
         filenames = sorted(os.listdir(config.TRAIN_PATH))

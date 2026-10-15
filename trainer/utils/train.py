@@ -79,58 +79,38 @@ class CleanProgress(tf.keras.callbacks.Callback):
                 print(f"  {key}: {logs[key]:.6f}")
             print()
         
-        # Detailed head-by-head breakdown
+        # Per-head breakdown
+        # Single-head Keras drops the 'output-0_' prefix, so fall back to bare keys
         print(f"\n{'Head':<6} {'Type':<12} {'Train Loss':<12} {'Val Loss':<12} {'Train Metric':<16} {'Val Metric':<16}")
         print(f"{'-'*90}")
-        
+
         for i in range(self.num_heads):
             head_name = f"output-{i}"
-            
-            # Head type
             head_type = "Regression" if i == 0 else "Classification"
-            
-            # Loss values
-            train_loss_key = f"{head_name}_loss"
-            val_loss_key = f"val_{head_name}_loss"
-            train_loss = logs.get(train_loss_key, 0)
-            val_loss = logs.get(val_loss_key, 0)
-            
-            # Metric values
-            if i == 0:  # Regression head
-                train_metric_key = f"{head_name}_mape"
-                val_metric_key = f"val_{head_name}_mape"
-                train_metric = logs.get(train_metric_key, 0)
-                val_metric = logs.get(val_metric_key, 0)
+
+            # Loss: prefer per-head key, fall back to total loss (single-head model)
+            train_loss = logs.get(f"{head_name}_loss", logs.get('loss', 0))
+            val_loss   = logs.get(f"val_{head_name}_loss", logs.get('val_loss', 0))
+
+            if i == 0:
+                # MAPE: prefer per-head key, fall back to bare 'mape' (single-head model)
+                train_metric = logs.get(f"{head_name}_mape", logs.get('mape', 0))
+                val_metric   = logs.get(f"val_{head_name}_mape", logs.get('val_mape', 0))
                 train_metric_str = f"MAPE: {train_metric:.4f}"
-                val_metric_str = f"MAPE: {val_metric:.4f}"
-            else:  # Classification head
-                # Try to find the correct metric name
-                train_metric = 0
-                val_metric = 0
-                metric_found = False
-                
-                # Common metric names for classification
-                for metric_suffix in ['accuracy', 'categorical_accuracy', 'sparse_categorical_accuracy']:
-                    train_metric_key = f"{head_name}_{metric_suffix}"
-                    val_metric_key = f"val_{head_name}_{metric_suffix}"
-                    
-                    if train_metric_key in logs:
-                        train_metric = logs.get(train_metric_key, 0)
-                        val_metric = logs.get(val_metric_key, 0)
-                        metric_found = True
+                val_metric_str   = f"MAPE: {val_metric:.4f}"
+            else:
+                train_metric, val_metric = 0, 0
+                for suffix in ['accuracy', 'categorical_accuracy', 'sparse_categorical_accuracy']:
+                    if f"{head_name}_{suffix}" in logs:
+                        train_metric = logs[f"{head_name}_{suffix}"]
+                        val_metric   = logs.get(f"val_{head_name}_{suffix}", 0)
                         break
-                
-                if metric_found:
-                    train_metric_str = f"Acc: {train_metric:.4f}"
-                    val_metric_str = f"Acc: {val_metric:.4f}"
-                else:
-                    train_metric_str = "Acc: N/A"
-                    val_metric_str = "Acc: N/A"
-            
-            # Format the row
+                train_metric_str = f"Acc: {train_metric:.4f}"
+                val_metric_str   = f"Acc: {val_metric:.4f}"
+
             print(f"{i:<6} {head_type:<12} {train_loss:<12.6f} {val_loss:<12.6f} "
                   f"{train_metric_str:<16} {val_metric_str:<16}")
-        
+
         print(f"{'='*90}\n")
         
 

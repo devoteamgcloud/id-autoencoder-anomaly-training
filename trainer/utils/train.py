@@ -179,7 +179,8 @@ def train_model(
     INPUT_DIM = len(features)
     LATENT_VEC_DIM = args.latent_dim if isinstance(args.latent_dim, int) else int(args.latent_dim * INPUT_DIM)
     N_HIDDEN = args.n_hidden
-    autoencoder, losses, weights = create_autoencoder(INPUT_DIM, LATENT_VEC_DIM, N_HIDDEN)
+    autoencoder, losses, weights = create_autoencoder(INPUT_DIM, LATENT_VEC_DIM, N_HIDDEN,
+                                                       dropout_rate=args.dropout_rate)
 
     # Save losses and weights
     with open(f'{config.MODEL_PATH}/loss_function.json', 'w') as f:

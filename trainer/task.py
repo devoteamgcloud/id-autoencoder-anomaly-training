@@ -117,6 +117,7 @@ if __name__ == '__main__':
     parser.add_argument('--n-hidden', type=int, default=3, help='Number of hidden layers between (exclusive): (1) input layer and latent space layer, (2) latent space layer and output layer')
     parser.add_argument('--latent-dim', type=validator.int_or_float, default=0.5, help='Dimension of latent space. If float between (0,1), it will set the dimension to d*input_dim. If int, it will set the dimension to the set value')
     parser.add_argument('--activation', type=str, default='relu', help='Type of activation function used in hidden layers')
+    parser.add_argument('--dropout-rate', type=float, default=0.1, help='Dropout rate applied after each hidden layer')
     parser.add_argument('--quantile-threshold', type=float, default=0.95, help='Quantile threshold for determining anomaly based on reconstruction error distribution')
 
     # Training batch and epoch

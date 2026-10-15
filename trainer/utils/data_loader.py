@@ -235,17 +235,15 @@ def get_features(
         elif period == "year":
             infix = "_year"
         features += [col + infix + "_sin", col + infix + "_cos"]
-    
-    feature_slices = [slice(0, len(features))]
 
     for col, _ in ohe_columns:  # OHE columns
         features += [
             f'ohe-{col}-{name}'
             for name in ohe_class_names[col]
         ]
-        feature_slices.append(
-            slice(len(features)-len(ohe_class_names[col]), len(features))
-        )
+
+    # Single slice covering all features — numerical and OHE reconstructed together
+    feature_slices = [slice(0, len(features))]
 
     # Free memory
     del df

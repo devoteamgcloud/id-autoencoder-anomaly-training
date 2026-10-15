@@ -138,7 +138,6 @@ def create_autoencoder(
     input_dim: int,
     latent_vec_dim: int,
     enc_hidden_layers_num: int,
-    feature_slices: List[slice],
     dropout_rate: float = 0.1,
     activation: str = 'relu'
 ):
@@ -178,30 +177,12 @@ def create_autoencoder(
         hidden = layers.Dropout(dropout_rate)(hidden)
         prev_layer = hidden
     
-    losses = {}
-    weights = {}
-    
-    # Output Head: Regression
-    ndim_reg = feature_slices[0].stop - feature_slices[0].start
-    reg_layer = layers.Dense(ndim_reg, activation='linear', name='output-0')(prev_layer)
-    losses['output-0'] = 'mae'
-    weights['output-0'] = 1.0 # Standardize weights first to debug
+    # Single output head — reconstruct all features (numerical + OHE) uniformly with MSE
+    output_layer = layers.Dense(input_dim, activation='linear', name='output-0')(prev_layer)
+    losses = {'output-0': 'mse'}
+    weights = {'output-0': 1.0}
 
-    # Output Heads: OHE / Binary
-    output_layers = [reg_layer]
-    for i, slice_ in enumerate(feature_slices[1:], start=1):
-        ndim = slice_.stop - slice_.start
-        act = 'sigmoid' if ndim == 1 else 'softmax'
-        loss_type = 'binary_crossentropy' if ndim == 1 else 'categorical_crossentropy'
-        
-        out = layers.Dense(ndim, activation=act, name=f'output-{i}')(prev_layer)
-        output_layers.append(out)
-        
-        losses[f'output-{i}'] = loss_type
-        # If divergence continues, lower the weight of the categorical heads
-        weights[f'output-{i}'] = 0.05
-    
-    autoencoder = keras.Model(inputs=input_layer, outputs=output_layers)
+    autoencoder = keras.Model(inputs=input_layer, outputs=output_layer)
     return autoencoder, losses, weights
 
 
@@ -217,7 +198,7 @@ def train_model(
     INPUT_DIM = len(features)
     LATENT_VEC_DIM = args.latent_dim if isinstance(args.latent_dim, int) else int(args.latent_dim * INPUT_DIM)
     N_HIDDEN = args.n_hidden
-    autoencoder, losses, weights = create_autoencoder(INPUT_DIM, LATENT_VEC_DIM, N_HIDDEN, feature_slices)
+    autoencoder, losses, weights = create_autoencoder(INPUT_DIM, LATENT_VEC_DIM, N_HIDDEN)
 
     # Save losses and weights
     with open(f'{config.MODEL_PATH}/loss_function.json', 'w') as f:
@@ -231,7 +212,7 @@ def train_model(
         loss=losses,
         loss_weights=weights,
         # metrics=[r2_score],
-        metrics = {'output-0': mape, **{f'output-{i}': 'accuracy' for i in range(1,len(feature_slices))}}
+        metrics = {'output-0': mape}
     )
 
     # -- Define callbacks

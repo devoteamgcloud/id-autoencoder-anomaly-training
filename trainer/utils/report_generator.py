@@ -34,47 +34,50 @@ def generate_training_report(
         axes[0].legend()
         axes[0].grid(True)
         
-        # Plot 2: Training & Validation Output-0 MAPE
-        axes[1].plot(history.history['output-0_mape'], label='Training MAPE')
-        if 'val_output-0_mape' in history.history:
-            axes[1].plot(history.history['val_output-0_mape'], label='Validation MAPE')
-        axes[1].set_title('Output-0 MAPE')
-        axes[1].set_xlabel('Epoch')
-        axes[1].set_ylabel('MAPE')
-        axes[1].legend()
-        axes[1].grid(True)
-        
-        # Plot 3: Average Training & Validation Accuracy for output-{i}
-        # Find all accuracy metrics for output-{i} (assuming there might be multiple)
-        train_acc_keys = [key for key in history.history.keys() if 'output-' in key and '_accuracy' in key and 'val_' not in key]
-        val_acc_keys = [key for key in history.history.keys() if 'val_output-' in key and '_accuracy' in key]
-        
+        # Plot 2: Training & Validation MAPE
+        # Key name differs: single-output model → 'mape'; multi-head → 'output-0_mape'
+        mape_key     = 'mape'         if 'mape'         in history.history else 'output-0_mape'
+        val_mape_key = 'val_mape'     if 'val_mape'     in history.history else 'val_output-0_mape'
+        if mape_key in history.history:
+            axes[1].plot(history.history[mape_key], label='Training MAPE')
+            if val_mape_key in history.history:
+                axes[1].plot(history.history[val_mape_key], label='Validation MAPE')
+            axes[1].set_title('Output-0 MAPE')
+            axes[1].set_xlabel('Epoch')
+            axes[1].set_ylabel('MAPE')
+            axes[1].legend()
+            axes[1].grid(True)
+
+        # Plot 3: Accuracy (multi-head) or best-val-loss marker (single-head)
+        train_acc_keys = [k for k in history.history if 'output-' in k and '_accuracy' in k and not k.startswith('val_')]
+        val_acc_keys   = [k for k in history.history if k.startswith('val_output-') and '_accuracy' in k]
+
         if train_acc_keys:
-            # Calculate average accuracy across all output-{i} metrics
-            train_acc_avg = []
-            val_acc_avg = []
-            
-            epochs = len(history.history[train_acc_keys[0]])
-            
-            for epoch in range(epochs):
-                # Average training accuracy for this epoch
-                train_epoch_acc = [history.history[key][epoch] for key in train_acc_keys]
-                train_acc_avg.append(sum(train_epoch_acc) / len(train_epoch_acc))
-                
-                # Average validation accuracy for this epoch (if available)
+            train_acc_avg, val_acc_avg = [], []
+            n_epochs = len(history.history[train_acc_keys[0]])
+            for ep in range(n_epochs):
+                train_acc_avg.append(sum(history.history[k][ep] for k in train_acc_keys) / len(train_acc_keys))
                 if val_acc_keys:
-                    val_epoch_acc = [history.history[key][epoch] for key in val_acc_keys]
-                    val_acc_avg.append(sum(val_epoch_acc) / len(val_epoch_acc))
-            
+                    val_acc_avg.append(sum(history.history[k][ep] for k in val_acc_keys) / len(val_acc_keys))
             axes[2].plot(train_acc_avg, label='Training Accuracy (avg)')
             if val_acc_avg:
                 axes[2].plot(val_acc_avg, label='Validation Accuracy (avg)')
-            
             axes[2].set_title('Average Output-{i} Accuracy')
-            axes[2].set_xlabel('Epoch')
             axes[2].set_ylabel('Accuracy')
-            axes[2].legend()
-            axes[2].grid(True)
+        else:
+            # Single-head: show train vs val loss together with best-epoch marker
+            axes[2].plot(history.history['loss'], label='Training Loss')
+            if 'val_loss' in history.history:
+                axes[2].plot(history.history['val_loss'], label='Validation Loss')
+                best_ep = int(np.argmin(history.history['val_loss']))
+                best_val = history.history['val_loss'][best_ep]
+                axes[2].scatter([best_ep], [best_val], color='red', zorder=5,
+                                label=f'best val (ep {best_ep}, {best_val:.3f})')
+            axes[2].set_title('Loss (best val epoch)')
+            axes[2].set_ylabel('Loss')
+        axes[2].set_xlabel('Epoch')
+        axes[2].legend()
+        axes[2].grid(True)
         
         plt.tight_layout()
         

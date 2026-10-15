@@ -213,7 +213,7 @@ def train_model(
     )
     model_checkpoint = keras.callbacks.ModelCheckpoint(
         f"{config.MODEL_PATH}/{model_name}",
-        monitor='val_loss',
+        monitor='loss',
         save_best_only=True,
         verbose=1
     )

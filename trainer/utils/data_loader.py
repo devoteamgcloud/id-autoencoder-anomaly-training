@@ -441,8 +441,10 @@ def create_ohe_class_names(ohe_columns: List[Tuple[str, int]]) -> Tuple[Dict[str
 
     col_class_cnt = {col: {} for col, _ in ohe_columns}
 
-    # Count the class count for every chunk
-    for filename in os.listdir(config.TRAIN_PATH):
+    # Count the class count for every chunk (respect MAX_TRAIN_SHARDS)
+    _all = sorted(os.listdir(config.TRAIN_PATH))
+    _shards = _all[:config.MAX_TRAIN_SHARDS] if config.MAX_TRAIN_SHARDS is not None else _all
+    for filename in _shards:
         # Load chunk
         try:
             df = pd.read_parquet(
@@ -518,8 +520,10 @@ def get_train_generator_and_val_set(
     }        
 
     def _generator():
-        filenames = os.listdir(config.TRAIN_PATH)
-    
+        filenames = sorted(os.listdir(config.TRAIN_PATH))
+        if config.MAX_TRAIN_SHARDS is not None:
+            filenames = filenames[:config.MAX_TRAIN_SHARDS]
+
         for filename in filenames:
             # Clean garbage
             gc.collect()

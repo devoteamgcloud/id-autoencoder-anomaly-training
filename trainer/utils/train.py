@@ -199,7 +199,7 @@ def create_autoencoder(
         
         losses[f'output-{i}'] = loss_type
         # If divergence continues, lower the weight of the categorical heads
-        weights[f'output-{i}'] = 0.1
+        weights[f'output-{i}'] = 0.05
     
     autoencoder = keras.Model(inputs=input_layer, outputs=output_layers)
     return autoencoder, losses, weights
@@ -251,7 +251,7 @@ def train_model(
     )
     model_checkpoint = keras.callbacks.ModelCheckpoint(
         f"{config.MODEL_PATH}/{model_name}",
-        monitor='loss',
+        monitor='val_loss',
         save_best_only=True,
         verbose=1
     )

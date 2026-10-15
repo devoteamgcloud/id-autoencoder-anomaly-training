@@ -553,7 +553,7 @@ def get_train_generator_and_val_set(
     # Load only first N shards to avoid OOM (val is used for loss monitoring only)
     _val_files = sorted(
         f for f in os.listdir(config.VAL_PATH) if f.endswith('.parquet')
-    )[:5]
+    )[:config.MAX_VAL_SHARDS]
     val_df = preprocess(
         pd.concat([
             pd.read_parquet(os.path.join(config.VAL_PATH, f))

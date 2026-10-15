@@ -78,6 +78,20 @@ def save_model_and_reports(
     except Exception as e:
         logger.error(f"Failed to save stat encoding mapping: {e}")
 
+    # Save scaler (per-feature mean/std) — required to reproduce preprocessing
+    try:
+        # Save for historical reference
+        blob = bucket.blob(f"reports/{args.model_name}/{args.curr_date_str}{args.postfix}/scaler.json")
+        blob.upload_from_filename(f"{config.MODEL_PATH}/scaler.json")
+
+        # Save for latest reference (overwrites previous)
+        blob = bucket.blob(f"reports/{args.model_name}/00000000{args.postfix}/scaler.json")
+        blob.upload_from_filename(f"{config.MODEL_PATH}/scaler.json")
+
+        logger.info(f"Scaler saved to {args.gcs_path}/reports/{args.model_name}/{args.curr_date_str}{args.postfix}/scaler.json")
+    except Exception as e:
+        logger.error(f"Failed to save scaler: {e}")
+
     # Save hyperparameters
     try:
         # Save for historical reference

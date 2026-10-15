@@ -1,11 +1,12 @@
 # task.py
 import argparse
 from datetime import datetime
+import json
 import logging
 import os
 
 import trainer.config as config
-from trainer.utils.data_loader import fetch_train_and_val, get_precomputed_data, get_features, get_train_generator_and_val_set, create_tf_dataset
+from trainer.utils.data_loader import fetch_train_and_val, get_precomputed_data, get_features, get_train_generator_and_val_set, create_tf_dataset, create_scaler
 from trainer.utils.train import train_model, find_threshold
 from trainer.utils.persistence import save_model_and_reports
 from trainer.utils.report_generator import generate_training_report, generate_threshold_report, generate_hyperparameters_report
@@ -59,6 +60,13 @@ def run_training_pipeline(args: argparse.Namespace):
     features, raw_features, feature_slices = get_features(**kwargs)
 
     kwargs['stat_mapping'] = stat_mapping
+
+    # Fit per-feature StandardScaler on train and persist it alongside the other
+    # preprocessing artifacts so inference/eval reproduce the exact same scaling.
+    scaler = create_scaler(features, **kwargs)
+    with open(f'{config.MODEL_PATH}/scaler.json', 'w') as f:
+        json.dump(scaler, f)
+    kwargs['scaler'] = scaler
 
     generator, val_df = get_train_generator_and_val_set(features, feature_slices, **kwargs)
     train, val = create_tf_dataset(generator, val_df, features, feature_slices, args.batch_size)

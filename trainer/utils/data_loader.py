@@ -250,10 +250,54 @@ def get_features(
     del df
     gc.collect()
 
-    
+
 
     return features, raw_features, feature_slices
-    
+
+
+def create_scaler(features: List[str], **pp_kwargs) -> Dict[str, List[float]]:
+    """Fit per-feature mean/std over the training shards (unscaled preprocess).
+
+    One streaming pass accumulating sum and sum-of-squares, so it never holds
+    all the data at once. Respects config.MAX_TRAIN_SHARDS so the scaler is
+    fitted on exactly the data the model trains on. Returns a dict with the
+    feature order so apply-time alignment is unambiguous.
+    """
+    d = len(features)
+    n = 0
+    s = np.zeros(d, dtype=np.float64)
+    ss = np.zeros(d, dtype=np.float64)
+
+    shards = sorted(f for f in os.listdir(config.TRAIN_PATH) if f.endswith('.parquet'))
+    if config.MAX_TRAIN_SHARDS is not None:
+        shards = shards[:config.MAX_TRAIN_SHARDS]
+    logger.info("fitting StandardScaler on %d train shards", len(shards))
+
+    for fname in shards:
+        try:
+            df = preprocess(pd.read_parquet(f'{config.TRAIN_PATH}/{fname}'),
+                            features=features, scaler=None, **pp_kwargs)
+        except Exception as e:
+            logger.warning('scaler: failed to load chunk: %s', e)
+            continue
+        X = df.values.astype(np.float64)
+        n += X.shape[0]
+        s += X.sum(axis=0)
+        ss += (X * X).sum(axis=0)
+        del df, X
+        gc.collect()
+
+    if n == 0:
+        raise RuntimeError("create_scaler: no training rows found")
+
+    mean = s / n
+    var = np.maximum(ss / n - mean ** 2, 0.0)
+    std = np.sqrt(var)
+    std[std < 1e-6] = 1.0  # constant feature → leave centered at 0, no divide blow-up
+
+    logger.info("scaler fitted on %d rows", n)
+    return {'features': features, 'mean': mean.tolist(), 'std': std.tolist()}
+
 
 def preprocess(
     df: pd.DataFrame,
@@ -270,9 +314,16 @@ def preprocess(
     # Precomputed data
     stat_mapping: Dict[str, Dict[str, Dict[str, float]]],
     ohe_class_names: Dict[str, List[str]],
+    scaler: Dict[str, List[float]] = None,
 
 ) -> pd.DataFrame:
-    """Preprocess the dataframe into all-numeric and normalized values"""
+    """Preprocess the dataframe into all-numeric and normalized values.
+
+    If `scaler` (per-feature mean/std fitted on train) is given, every feature
+    is standardized to (x - mean) / std so each contributes equally to
+    reconstruction error — otherwise large-range features (hour means, counts)
+    dominate and error tracks account activity rather than anomalousness.
+    """
     # Drop ID columns
     df.drop(id_columns, inplace=True, axis=1)
 
@@ -353,7 +404,16 @@ def preprocess(
     df_concat.columns = all_columms
     df_concat.drop([t[0] for t in ohe_columns], axis=1, inplace=True)
 
-    return df_concat[features].astype(np.float32)
+    result = df_concat[features].astype(np.float32)
+
+    # Standardize to comparable scale (fitted on train) so no single feature
+    # dominates the reconstruction error. mean/std are in `features` order.
+    if scaler is not None:
+        mean = np.asarray(scaler['mean'], dtype=np.float32)
+        std = np.asarray(scaler['std'], dtype=np.float32)
+        result = ((result - mean) / std).astype(np.float32)  # broadcasts by column position
+
+    return result
 
 
 def create_stat_mapping(stat_encoding_columns: List[str]) -> Dict[str, Dict[str, Dict[str, float]]]:
@@ -501,7 +561,8 @@ def get_train_generator_and_val_set(
 
     # Precomputed columns
     stat_mapping: Dict[str, Dict[str, Dict[str, float]]],
-    ohe_class_names: Dict[str, List[str]]
+    ohe_class_names: Dict[str, List[str]],
+    scaler: Dict[str, List[float]] = None
 
 ) -> Tuple[
     Generator[Tuple[pd.DataFrame, pd.DataFrame], None, None],
@@ -525,6 +586,7 @@ def get_train_generator_and_val_set(
         "ohe_columns": ohe_columns,
         'stat_mapping': stat_mapping,
         'ohe_class_names': ohe_class_names,
+        'scaler': scaler,
     }
 
     def _generator():

@@ -84,6 +84,16 @@ def load_artifacts(artifacts_dir: str):
         with open(hp_path) as f:
             threshold = json.load(f).get("threshold")
 
+    # StandardScaler fitted at train time — must be applied identically here.
+    scaler = None
+    scaler_path = os.path.join(artifacts_dir, "scaler.json")
+    if os.path.exists(scaler_path):
+        with open(scaler_path) as f:
+            scaler = json.load(f)
+        log.info("loaded scaler.json (features standardized)")
+    else:
+        log.warning("no scaler.json found — scoring UNSCALED (results won't match a scaled model)")
+
     kwargs = {
         "features":              cols["features"],
         "id_columns":            cols["id-columns"],
@@ -96,6 +106,7 @@ def load_artifacts(artifacts_dir: str):
         "ohe_columns":           [tuple(x) for x in cols.get("ohe-columns", [])],
         "stat_mapping":          precomp["stat_mapping"],
         "ohe_class_names":       precomp["ohe_class_names"],
+        "scaler":                scaler,
     }
     return cols["features"], kwargs, threshold
 

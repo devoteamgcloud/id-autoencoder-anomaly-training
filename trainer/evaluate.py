@@ -130,12 +130,21 @@ def _norm_merchant(x) -> str:
     return "" if x is None else str(x).strip()
 
 
-def _excel_cust_key(msisdn: str, cust_id: str) -> str:
-    """Replicate the SQL: COALESCE(NULLIF(TRIM(cust_msisdn),''), cust_id)."""
+def _excel_cust_key(msisdn: str, cust_id: str):
+    """Replicate the v2 SQL cust_key: prefer a VALID cust_id, else a VALID
+    msisdn (with placeholder rejection + id:/ph: prefixes), else None.
+
+    None means the transaction keys to a solo:<trx_id> singleton in training,
+    which can never match a customer-level alert — so such alerts are dropped.
+    """
+    cid = (cust_id or "").strip()
+    if cid and cid not in ("", "0", "01") and not re.fullmatch(r"0+", cid):
+        return "id:" + cid
     m = (msisdn or "").strip()
-    if m and m.lower() != "nan":
-        return m
-    return (cust_id or "").strip()
+    mm = m.replace("+", "")
+    if m and m != "081224567890" and mm != "" and not re.fullmatch(r"6?2?0{4,}", mm):
+        return "ph:" + m
+    return None
 
 
 def load_alerts(xlsx_path: str) -> pd.DataFrame:
@@ -158,10 +167,11 @@ def load_alerts(xlsx_path: str) -> pd.DataFrame:
     })
     out["gt_label"] = out["action"].isin(TP_ACTIONS).astype(int)
 
-    # Drop alerts we cannot join (missing merchant or date).
-    bad = out["merchant_id"].eq("") | out["trx_date"].isna()
+    # Drop alerts we cannot join (missing merchant/date, or unidentifiable
+    # customer -> keys to a solo singleton that never matches).
+    bad = out["merchant_id"].eq("") | out["trx_date"].isna() | out["cust_key"].isna()
     if bad.any():
-        log.warning("dropping %d alerts with missing merchant/date", int(bad.sum()))
+        log.warning("dropping %d alerts (missing merchant/date/identifiable customer)", int(bad.sum()))
     out = out[~bad].reset_index(drop=True)
 
     log.info("loaded %d PG alerts  (%d TP, %d FP)",

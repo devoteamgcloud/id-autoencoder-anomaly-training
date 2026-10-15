@@ -162,6 +162,7 @@ def generate_hyperparameters_report(
         'drop-columns': args.drop_columns,
         'impute-columns': args.impute_columns,
         'log-scale-columns': args.log_scale_columns,
+        'signed-log-columns': getattr(args, 'signed_log_columns', []),
         'stat-encoding-columns': args.stat_encoding_columns,
         'periodic-columns': args.periodic_columns,
         'ohe-columns': args.ohe_columns,
